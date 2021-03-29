@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import (
+    QWidget,
+    QLabel,
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -14,60 +16,13 @@ from PyQt5.QtWidgets import (
     QAbstractItemView,
     QHeaderView
     )
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QKeySequence, QIcon, QPixmap, QColor, QBrush
 
 from amazons import Amazons
 from const import *
-
-
-# def extract_positions(line):
-#     """
-#     Récupère la liste de positions dans line
-# 
-#     Args:
-#         line (str): string sous la forme '<pos1>,<pos2>,<pos3>,...,<posn>'
-# 
-#     Returns:
-#         list: liste d'instances de Pos2D
-# 
-#     Raises:
-#         InvalidFormatError: si la ligne est vide
-#     """
-#     if line == '':
-#         raise InvalidFormatError('Liste de positions vide')
-#     else:
-#         return line.strip().split(',')
-# 
-# 
-# def read_file(path):
-#     """
-#     Récupère les informations stockées dans le fichier donné
-# 
-#     Args:
-#         path (str): chemin vers un fichier de format de plateau
-# 
-#     Returns:
-#         tuple: (size, pos_black, pos_white, pos_arrows)
-# 
-#     Raises:
-#         InvalidFormatError: si le format du fichier est invalide
-#     """
-#     with open(path, 'r') as f:
-#         try:
-#             size = int(f.readline().strip())
-#         except ValueError:  # Si la première ligne n'est pas un entier
-#             raise InvalidFormatError('La taille du plateau n\'est pas donnée')
-#         pos_black = extract_positions(f.readline())
-#         pos_white = extract_positions(f.readline())
-#         # on récupère la liste des positions des flèches
-#         try:
-#             pos_arrows = extract_positions(f.readline())
-#         except InvalidFormatError:
-#             pos_arrows = []
-#         if f.readline() != '':  # S'il reste du texte dans le fichier
-#             raise InvalidFormatError('Format invalide: informations après les flèches')
-#     return size, pos_black, pos_white, pos_arrows
+from players import *
+import copy
 
 
 class NewGame(QDialog):
@@ -79,31 +34,38 @@ class NewGame(QDialog):
 
         self.resize(565, 796)
         self.setWindowTitle("Configuration de la partie")
+        # self.setStyleSheet("QTableWidget::item::selected{border:2px solid blue}")
         self.layout = QVBoxLayout()
 
-        players = PlayersType()
-        self.layout.addLayout(players)
-        board = CustomBoard()
-        self.layout.addLayout(board)
-        # self.layout.addWidget(BeginGame)
-        geom = QPushButton("Geom")
-        geom.clicked.connect(self.sample)
-        self.layout.addWidget(geom)
-        
+        self.players = PlayersType()
+        self.layout.addLayout(self.players)
+        self.board = CustomBoard()
+        self.layout.addLayout(self.board)
+
+        beg_game_button = QPushButton("Commencer la partie")
+        beg_game_button.clicked.connect(self.begin_func)
+        self.layout.addWidget(beg_game_button)
 
         self.setLayout(self.layout)
         # self.exec_()
 
-    def sample(self):
-        print(self.height(), self.width())
-
-    def begin_button(self):
-        beg_game_button = QPushButton()
-        beg_game_button.clicked.connect(begin_func)
-
     def begin_func(self):
-        self.n = self.board.spinner.getValue()
-        self.pos_blanc
+        self.board.to_amazon()
+        # self.board.amazons.
+        print(self.players.white.type_.currentText())
+        if self.players.white.type_.currentText() == "Humain":
+            player1 = (HumanPlayer(self.board.amazons.board, PLAYER_1))
+        else:
+            player1 = (AIPlayer(self.board.amazons.board, PLAYER_1))
+
+        if self.players.black.type_.currentText() == "Humain":
+            player2 = (HumanPlayer(self.board.amazons.board, PLAYER_2))
+        else:
+            player2 = (AIPlayer(self.board.amazons.board, PLAYER_2))
+
+        self.board.amazons.players = (player1, player2)
+        self.game = self.board.amazons
+        self.close()
 
 
 class PlayersType(QHBoxLayout):
@@ -112,9 +74,11 @@ class PlayersType(QHBoxLayout):
     def __init__(self):
         super().__init__()
 
-        self.addLayout(Player("blanc"))
-        self.addLayout(Player("noir"))
-        self.insertSpacing(1, 10)
+        self.white = Player("blanc")
+        self.addLayout(self.white)
+        self.black = Player("noir")
+        self.addLayout(self.black)
+        self.insertSpacing(1, 8)
 
 
 class Player(QFormLayout):
@@ -129,7 +93,7 @@ class Player(QFormLayout):
 
         self.setFormAlignment(Qt.AlignCenter)
 
-        self.addRow(f"Joueur {couleur} :", self.player())
+        self.addRow(f"Joueur {couleur} :", self.type_())
         self.addRow("Délais IA :", self.slider())
 
     def enable_slider(self, ia):
@@ -144,14 +108,14 @@ class Player(QFormLayout):
         else:
             self.slider.setEnabled(False)
 
-    def player(self):
+    def type_(self):
         """Création de la combobox qui choisit le type d'un joueur."""
-        player = QComboBox()
-        player.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.type_ = QComboBox()
+        self.type_.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-        player.addItems(["Humain", "Ordinateur"])
-        player.activated.connect(self.enable_slider)
-        return player
+        self.type_.addItems(["Humain", "Ordinateur"])
+        self.type_.activated.connect(self.enable_slider)
+        return self.type_
 
     def slider(self):
         """Création du slider de délais de l'IA. Plus élevé = plus dur."""
@@ -174,7 +138,8 @@ class CustomBoard(QVBoxLayout):
         self.amazons = Amazons(10, [], [], [])
 
         self.addLayout(self.top_buttons())
-        self.addWidget(self.board_widget())
+        self.board = BoardUI()
+        self.addWidget(self.board)
         self.addLayout(self.bottom_buttons())
 
     def to_amazon(self, file_=None):
@@ -189,17 +154,16 @@ class CustomBoard(QVBoxLayout):
             letters = "abcdefghijklmnopqrstuvwxyz"
             for j in range(size):
                 for i in range(size):
-                    cell = self.board.item(i, j)
+                    cell = self.board.cellWidget(i, j)
                     # print(self.board.itemAt(i, j))
                     # print(cell)
                     if cell is not None:
-                        print(cell.text())
-                        if cell.text() == CHARS[0]:
+                        # print(cell.type_)
+                        if cell.type_ == 0:
                             pos_white.append(f'{letters[j]}{-(i-size)}')
-                            # print(pos_white)
-                        elif cell.text() == CHARS[1]:
+                        elif cell.type_ == 1:
                             pos_black.append(f'{letters[j]}{-(i-size)}')
-                        elif cell.text() == CHARS[3]:
+                        elif cell.type_ == 2:
                             pos_arrows.append(f'{letters[j]}{-(i-size)}')
 
             print(pos_arrows, pos_white, pos_black)
@@ -217,7 +181,8 @@ class CustomBoard(QVBoxLayout):
         size = self.amazons.board.N
         self.spinner.setValue(size)
 
-        chars = [WHITE, BLACK, CHARS[3]]
+        # chars = [WHITE, BLACK, CHARS[3]]
+        chars = self.board.tokens
         pions = self.amazons.board.queens
         pions.append(self.amazons.board.arrows[0])
         size
@@ -237,7 +202,7 @@ class CustomBoard(QVBoxLayout):
                                                "Fichier amazones (.txt)")
         # print(self.board.itemAt(0,0).text())
         # self.to_amazon(filename[0])
-        self.to_amazon()
+        self.to_amazon(filename[0])
         self.from_amazon()
         # size, pos_black, pos_white, pos_arrows = read_file(filename[0])
 
@@ -263,21 +228,24 @@ class CustomBoard(QVBoxLayout):
     def fill_selection(self):
         """Remplit la sélection du plateau du pion choisit."""
         token = None
-        tokens = ('\u25CB', '\u25CF', "✕")
+        # tokens = ('\u25CB', '\u25CF', "✕")
+        tokens = self.board.tokens
         for i in range(1, 4):
             if self.top_bar.itemAt(i).widget().isDown():
                 token = tokens[i-1]
                 break
         selection = self.board.selectedIndexes()
         for i in selection:
-            fill = QTableWidgetItem(token)
-            fill.setTextAlignment(Qt.AlignCenter)
-            self.board.setItem(i.row(), i.column(), fill)
+            # fill = QTableWidgetItem(token)
+            # fill.setTextAlignment(Qt.AlignCenter)
+            # self.board.setItem(i.row(), i.column(), fill)
+            self.board.setCellWidget(i.row(), i.column(), copy.copy(token))
 
     def change_board_size(self, new_size):
         """Change la taille du plateau selon la valeur du spinner."""
         self.board.setRowCount(new_size)
         self.board.setColumnCount(new_size)
+        self.board.size_changed(new_size)
 
         # change également la hauteur des cellules pour qu'elles soient carrées
         width = self.board.horizontalHeader().sectionSize(0)
@@ -327,13 +295,113 @@ class CustomBoard(QVBoxLayout):
 
     def board_widget(self):
         """Crée le plateau de jeu configurable."""
-        self.board = QTableWidget()
+        self.board = QTableWidget(3, 3)
         self.board.horizontalHeader().hide()
         self.board.verticalHeader().hide()
 
         self.board.horizontalHeader().setMinimumSectionSize(20)
         self.board.verticalHeader().setMinimumSectionSize(20)
 
+        item = QTableWidgetItem()
+        # icon = QIcon("ocean3.0@1x.png")
+        resource = "crown_white.svg"
+        icon = QWidget()
+        label = QLabel()
+        label.setScaledContents(True)
+        label.setPixmap(QPixmap(resource))
+        layout = QHBoxLayout()
+        layout.addWidget(label)
+        layout.setAlignment(Qt.AlignCenter)
+        margin = 6
+        layout.setContentsMargins(margin, margin, margin, margin)
+        icon.setLayout(layout)
+        color = QColor('#6d5e3c')
+        
+#     int row = 0;
+# int column = 0;
+# QSize sizeIcon(32, 32);
+# QString iconSrc = ":/Actions/myicon.png";
+# 
+# QWidget *pWidget = new QWidget();
+# QLabel *label = new QLabel;
+# label->setMaximumSize(sizeIcon);
+# label->setScaledContents(true);
+# label->setPixmap(QPixmap(iconSrc));
+# QHBoxLayout *pLayout = new QHBoxLayout(pWidget);
+# pLayout->addWidget(label);
+# pLayout->setAlignment(Qt::AlignCenter);
+# pLayout->setContentsMargins(0,0,0,0);
+# pWidget->setLayout(pLayout);
+# 
+# this->ui->myTableWidget->setCellWidget(row, column, pWidget);
+#     
+#     
+#     
+        # item.setData(Qt.DecorationRole, QPixmap("crown.svg"))
+        item = QTableWidgetItem()
+        item.setBackground(QBrush(color))
+        self.board.setItem(0,0,item)
+        self.board.setCellWidget(0, 0, icon)
         self.board.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.board.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         return self.board
+
+class BoardUI(QTableWidget):
+    """Représente l'interface graphique d'un plateau de jeu.
+    """
+
+    def __init__(self):
+        super().__init__(10, 10)
+        self.size = 10
+        # self.setStyleSheet("QTableWidget.item{ selection-background-color: red}")
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
+
+        self.horizontalHeader().setMinimumSectionSize(20)
+        self.verticalHeader().setMinimumSectionSize(20)
+
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        self.tokens = []
+        self.tokens.append(Token("crown_white.svg", 0))
+        self.tokens.append(Token("crown_black.svg", 1))
+        self.tokens.append(Token("arrow.svg", 2))
+
+        self.board_colors = []
+        self.board_colors.append(QBrush(QColor("#463c26")))
+        self.board_colors.append(QBrush(QColor("#d2cba8")))
+
+        self.size_changed()
+
+    def size_changed(self, new_size=10):
+        self.size = new_size
+        for i in range(self.size):
+            for j in range(self.size):
+                back = QTableWidgetItem()
+                back.setBackground(self.board_colors[(i+j)%2])
+                self.setItem(i, j, back)
+
+
+class Token(QWidget):
+
+    def __init__(self, image, type_):
+        super().__init__()
+        self.image_file = image
+        self.type_ = type_
+
+        label = QLabel()
+        label.setScaledContents(True)
+        label.setPixmap(QPixmap(self.image_file))
+
+        layout = QHBoxLayout()
+        layout.addWidget(label)
+        layout.setAlignment(Qt.AlignCenter)
+        self.margin = 6
+        layout.setContentsMargins(self.margin, self.margin, self.margin, self.margin)
+
+        self.setLayout(layout)
+
+    def __copy__(self):
+        res = Token(self.image_file, self.type_)
+        return res
