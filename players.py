@@ -26,6 +26,7 @@ class Player(metaclass=ABCMeta):
         """
         action = self._play(coup)
         self.board.act(action)
+        return action
 
     @property
     def other_player_id(self):
