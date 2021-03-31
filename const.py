@@ -3,6 +3,10 @@ from pos2d import Vec2D
 WHITE = '\u25CB'  # caractère du joueur blanc
 BLACK = '\u25CF'  # caractère du joueur noir
 
+# type de joueur
+HUMAN = 0
+AI = 1
+
 INF = float('inf')
 
 PLAYER_1 = 0
