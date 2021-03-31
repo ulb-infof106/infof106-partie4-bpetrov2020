@@ -297,7 +297,6 @@ class Board:
         self._shoot_arrow(action.arrow_pos)  # et on tire la flèche
         if log_action:
             self.history.append(action)
-        print("inside act")
 
     def _move(self, old_pos, new_pos):
         """
