@@ -34,6 +34,9 @@ CHARS = [WHITE,   BLACK,    '.',   'X']
 
 #         WHITE              BLACK             EMPTY    ARROW
 PATHS = ["crown_white.svg", "crown_black.svg", ""    , "arrow.svg"]
+TOKENS = ["crown_white.svg", "crown_black.svg", ""    , "arrow.svg"]
+
+# COLORS = {"light": "#d2cba8", "dark": "#463c26", "check": "#827e68", "high": "#ffff00"}
 
 ERREUR_COUP = "Format du coup non valide"
 ERREUR_REINE = "Pas de reine à la position de départ"
