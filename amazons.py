@@ -60,13 +60,16 @@ class Amazons:
         current_player_idx (int): indice du joueur dont c'est le tour
         status (EndOfGameStatus): état de la fin de partie
     """
-    def __init__(self, path):
+    def __init__(self, path, player1=HUMAN, player2=AI):
         """
         Args:
             path (str): chemin vers le fichier représentant le plateau
         """
         self.board = Board(*read_file(path))
-        self.players = (HumanPlayer(self.board, PLAYER_1), AIPlayer(self.board, PLAYER_2))
+        self.players = []
+        self.players.append(HumanPlayer(self.board, PLAYER_1) if player1 == HUMAN else AIPlayer(self.board, PLAYER_1))
+        self.players.append(HumanPlayer(self.board, PLAYER_2) if player2 == HUMAN else AIPlayer(self.board, PLAYER_2))
+        # self.players = (HumanPlayer(self.board, PLAYER_1), AIPlayer(self.board, PLAYER_2))
         self.current_player_idx = 0
         self.status = None
 
