@@ -23,6 +23,8 @@ class MainWindow(QMainWindow):
         self.layout = QVBoxLayout()
         self.path = ''
 
+        self.setWindowTitle("Jeu des amazones")
+
         self.resize(700, 800)
 
         self.player1 = self.player_type("blanc")
@@ -82,16 +84,13 @@ class MainWindow(QMainWindow):
             child = self.board_outer_layout.takeAt(0)
             self.board_outer_layout.removeWidget(child.widget())
 
-        # self.board_widget = QWidget()
-        # self.board_ui = BoardUI(Amazons(self.path, HUMAN, HUMAN), self)
-        # self.board_widget.setLayout(self.board_ui)
         self.board_widget = BoardUI(Amazons(self.path,
                                             self.player1.combo.currentIndex(),
                                             self.player2.combo.currentIndex()),
                                     self)
         self.board_outer_layout.addWidget(self.board_widget)
 
-        self.board_widget.next_turn()
+        self.board_widget.timer.start()
 
     def stop_game(self):
         out = StopGame(self).exec_()
@@ -106,7 +105,8 @@ class MainWindow(QMainWindow):
             pass
             print("no")
 
-    def resizeEvent(self, QResizeEvent=None):
+    def resizeEvent(self, QResizeEvent):
+        """Pour garder un plateau carré en redimentionnant la fenêtre."""
         geo = self.board_outer_layout.geometry()
         diff = abs(geo.width()-geo.height())
         if geo.width() < geo.height():
@@ -122,12 +122,17 @@ class BoardUI(QWidget):
 
         self.game = game
         self.grid_ui = GridUI(self.game.board)
+        self.grid_ui.set_disabled(True)
         self.grid_ui.cells.buttonClicked.connect(self.add_action)
         self.setLayout(self.grid_ui)
 
         self.current_player_idx = 1  # deuxième joueur, va être changé dans next_turn()
 
-        # self.N = self.game.board.N
+        delay = 2000
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.next_turn)
+        self.timer.setSingleShot(True)
+        self.timer.setInterval(delay)
 
     def next_turn(self):
         """Joue le prochain tour, humain ou ordinateur."""
@@ -140,25 +145,26 @@ class BoardUI(QWidget):
             if isinstance(self.current_player, HumanPlayer):
                 self.human_turn_begin()
             else:
+                self.timer.start()
                 action = self.current_player.play()
                 self.update_from_action(action)
-                self.next_turn()
+                # self.next_turn()
 
     def human_turn_begin(self):
         """Le tour du joueur humain commence."""
-        self.action = ''
+        self.action = []
         self.set_state(True)
 
     def human_turn_end(self):
         """Le tour du joueur humain se finit peut-être."""
         try:
             # action = self.current_player.play(f'{self.action[0].str_}>{self.action[1].str_}>{self.action[2].str_}')
-            action = self.current_player.play(self.action)
+            action = self.current_player.play(''.join(self.action))
             self.update_from_action(action)
             self.set_state(False)
             self.next_turn()
         except InvalidActionError:
-            self.action = ''
+            self.action = []
 
     def add_action(self, action):
         """Ajoute un coup à l'action du joueur humain courant.
@@ -167,12 +173,12 @@ class BoardUI(QWidget):
             action(Cell): cellule du coup
         """
         if len(self.action) == 0:
-            self.action += action.coord_str
+            self.action.append(action.coord_str)
         else:
-            self.action += f'>{action.coord_str}'
-        assert len(self.action) <= 8
-        # print(self.action)
-        if len(self.action) == 8:
+            self.action.append(f'>{action.coord_str}')
+        print(self.action)
+        assert len(self.action) <= 3
+        if len(self.action) == 3:
             self.human_turn_end()
 
     def declare_winner(self):
@@ -188,116 +194,24 @@ class BoardUI(QWidget):
             state(bool): True s'il faut activer
         """
         if not state:
-            # self.cells.checkedButton().setChecked(False)
             self.grid_ui.cells.setExclusive(False)
-            # print(self.grid_ui.cells.checkedButton().coord_str)
             button = self.grid_ui.cells.checkedButton()
             button.setChecked(False)
-            button.repaint()
-            self.grid_ui.disable_grid()  # setAttribute(Qt.WA_TransparentForMouseEvents, True)
-            # for cell in self:
-            #     cell.setChecked(False)
-            #     cell.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+            button.repaint()  # avoir un retour immédiat de la désactivation
+            self.grid_ui.set_disabled(True)
         else:
-            # self.parent().setAttribute(Qt.WA_TransparentForMouseEvents)
             self.grid_ui.cells.setExclusive(True)
-            self.grid_ui.disable_grid()  # setAttribute(Qt.WA_TransparentForMouseEvents, False)
-            # for cell in self:
-            #     # print(cell.id_)
-            #     # if cell.id_ in (0, 1):
-            #     # print(type(cell))
-            #     cell.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+            self.grid_ui.set_disabled(False)
 
     def update_from_action(self, action):
-        """Met à jour la gui du plateau."""
+        """Met à jour la gui du plateau.
+
+        Args:
+            action(Action): action qui vient d'être jouée
+        """
         self.grid_ui[action.old_pos] = TOKENS[EMPTY]
         self.grid_ui[action.new_pos] = TOKENS[action.player]
         self.grid_ui[action.arrow_pos] = TOKENS[ARROW]
-        # for cell in self:
-        #     # print(cell)
-        #     # print(self.board.grid[cell.coord])
-        #     path = PATHS[self.game.board.grid[cell.coord]]
-        #     # print(path)
-        #     cell.set_token(path)
-
-    # def __iter__(self):
-    #     """Itération sur toutes les cases de la gui de la grille."""
-    #     for i in range(self.N):
-    #         for j in range(self.N):
-    #             # print(self[Pos2D(i, j)])
-    #             print(self[Pos2D(i, j)])
-    #             yield self[Pos2D(i, j)]
-
-    # def __getitem__(self, pos):
-    #     """Renvoir l'item la position en paramètre.
-    # 
-    #     Args:
-    #         pos(Pos2D): position demandée"""
-    #     return self.itemAtPosition(-(pos.row-self.N+1), pos.col).widget()
-
-
-class Cell(QPushButton):
-    """Case de la gui du plateau.
-
-    Args:
-        light(int): 0 pour une case claire, 1 pour une sombre
-        row(int): rangée
-        column(int): colonne
-
-    Attributes:
-        coord(Pos2D): coordonées de la cellule
-        id_(int): id du pion qui s'y trouve (ou qui ne s'y trouve pas) -> voir const.py
-    """
-
-    def __init__(self, light=0, row=0, column=0):
-        super().__init__()
-        self.setMinimumWidth(30)
-        self.setMinimumHeight(30)
-
-        self.coord = Pos2D(row, column)
-        self.id_ = 2  # empty
-
-        self.setCheckable(True)
-        self.setFlat(True)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        self.token_slot = QHBoxLayout(self)  # là où se pose le pion
-        self.token = Token("")
-        self.token_slot.addWidget(self.token)
-
-        if light:
-            self.setStyleSheet("QPushButton:flat {background-color:#d2cba8; border: none}\
-                                QPushButton:checked{border:5px solid #827e68 }")
-        else:
-            self.setStyleSheet("QPushButton:flat {background-color:#463c26; border:none}\
-                                QPushButton:checked{border:5px solid #827e68 }")
-
-    def set_token(self, path):
-        """
-        Args:
-            path(str): chemin vers l'image du pion qui est mis sur la case
-        """
-        self.id_ = PATHS.index(path)
-        self.token.setPixmap(QPixmap(path))
-        self.token.repaint()  # avoir un retour immédiat de l'action
-
-
-class Token(QLabel):
-    """Représente un pion.
-
-    Args:
-        filename(str): fichier image du pion
-    """
-
-    def __init__(self, path):
-        super().__init__()
-
-        self.setScaledContents(True)  # pour s'adapter à la taille de la case
-        self.setPixmap(QPixmap(path))
-
-        margin = 3
-        self.setContentsMargins(margin, margin, margin, margin)
-
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
