@@ -22,118 +22,118 @@ class MainWindow(QMainWindow):
         super().__init__()  # initialiser QMainWindow
 
         self.layout = QVBoxLayout()
-        self.path = ''
+        # self.layout.setContentsMargins(10,10,10,5)
+        # self.layout.setSpacing(5)
+        # self.path = ''
 
         self.setWindowTitle("Jeu des amazones")
 
-        self.resize(700, 800)
+        self.resize(730, 800)
+        self.setMinimumWidth(730)
 
         self.add_menu_bar()
-
-        # self.player1 = self.player_type("blanc")
-        # self.layout.addLayout(self.player1)
-        # self.player2 = self.player_type("noir")
-        # self.layout.addLayout(self.player2)
-
-        # self.load_button = QPushButton("Charger un fichier")
-        # self.load_button.clicked.connect(self.load_file)
-        # self.layout.addWidget(self.load_button)
-
-        self.board_widget = QWidget()  # widget factice du plateau
-        self.board_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.board_outer_layout = QHBoxLayout()  # pour pouvoir centrer le plateau
-        self.board_outer_layout.setAlignment(Qt.AlignCenter)
-        self.board_outer_layout.addWidget(self.board_widget)
-        self.layout.addLayout(self.board_outer_layout)
-
-        # self.begin_button = QPushButton("Commencer la partie")
-        # self.begin_button.clicked.connect(self.begin_game)
-        # self.layout.addWidget(self.begin_button)
-
-        # self.custom_status = QHBoxLayout()
-        # self.custom_status.addWidget(QLabel("En train de jouer"))
-        # self.fill_widget = QWidget()
-        # self.fill_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        # self.custom_status.addWidget(self.fill_widget)
-        # self.layout.addLayout(self.custom_status)
-
+        self.add_board_placeholder()
         self.add_custom_status_bar()
 
         self.widget = QWidget()  # widget factice
         self.widget.setLayout(self.layout)
         self.setCentralWidget(self.widget)
-
         self.show()
 
     def add_menu_bar(self):
+        """Ajoute la barre de menu."""
         menu_bar = self.menuBar()
-
         game_menu = menu_bar.addMenu('Jeu')
 
         self.new_game = QAction()
-        self.new_game.setText("Nouvelle partie...")
+        self.new_game.setText("Nouvelle partie...")  # commencer une nouvelle partie
         self.new_game.triggered.connect(self.config_new_game)
         game_menu.addAction(self.new_game)
 
+    def add_board_placeholder(self):
+        """Placeholder pour le plateau qui va être ajouté par la suite."""
+        self.greet_layout = QVBoxLayout()
+        self.greet_layout.setAlignment(Qt.AlignCenter)
+        self.greet_layout.setSpacing(20)
+        self.greet_layout.setContentsMargins(60,60,60,60)
+
+        greet_image_layout = QHBoxLayout()  # pour avoir une contrainte de grandeur et un alignement
+        greet_image = QLabel()
+        greet_image.setMaximumSize(300, 300)
+        greet_image.setPixmap(QPixmap("greet_arrows.svg"))
+        greet_image.setScaledContents(True)
+        greet_image_layout.addWidget(greet_image)
+        self.greet_layout.addLayout(greet_image_layout)
+
+        greet_text = QLabel()
+        greet_text.setAlignment(Qt.AlignCenter)
+        greet_text.setStyleSheet("QLabel { font-size: 20px; font: bold}")
+        greet_text.setText("Bienvenue dans le jeu des amazones !")
+        self.greet_layout.addWidget(greet_text)
+
+        # greet_explain = QLabel()
+        # greet_explain.setAlignment(Qt.AlignCenter)
+        # greet_explain.setStyleSheet("QLabel { font-size: 16px}")
+        # greet_explain.setTextFormat(Qt.MarkdownText)
+        # # greet_text.setText("**Bienvenue dans le jeu des amazones !**")
+        # greet_explain.setText("Pour commencer une partie : **Jeu** > **Nouvelle partie...**")
+        # self.greet_layout.addWidget(greet_explain)
+
+        greet_button_layout = QHBoxLayout()
+        greet_button = QPushButton("Nouvelle partie")
+        greet_button.clicked.connect(self.config_new_game)
+        greet_button.setMaximumWidth(200)
+        greet_button_layout.addWidget(greet_button)
+        self.greet_layout.addLayout(greet_button_layout)
+
+        self.board_widget = QWidget()  # widget factice du plateau
+        self.board_widget.setLayout(self.greet_layout)
+        self.board_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.board_outer_layout = QHBoxLayout()  # pour pouvoir centrer le plateau
+        self.board_outer_layout.setAlignment(Qt.AlignCenter)
+
+        self.board_outer_layout.addWidget(self.board_widget)
+        self.layout.addLayout(self.board_outer_layout)
+
     def add_custom_status_bar(self):
         """Ajout d'une barre de statut."""
-        status_bar = QHBoxLayout()
-        status_bar.setContentsMargins(0,0,6,0)
+        self.status_bar = QWidget()
+        status_bar_layout = QHBoxLayout()
+        status_bar_layout.setContentsMargins(0,0,6,0)
 
         self.status_msg = QLabel("")  # message du joueur en train de jouer
-        status_bar.addWidget(self.status_msg)
+        status_bar_layout.addWidget(self.status_msg)
 
         fill_widget = QWidget()  # pour que les widgets soient à gauch et à droite
         fill_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        status_bar.addWidget(fill_widget)
+        status_bar_layout.addWidget(fill_widget)
 
         self.delay_slid = DelaySlider()  # modifier le délais d'ia en jeu
         self.delay_slid.slider.setMaximumWidth(200)
-        status_bar.addLayout(self.delay_slid)
+        self.delay_slid.slider.valueChanged.connect(self.change_delay)
+        status_bar_layout.addLayout(self.delay_slid)
 
-        self.layout.addLayout(status_bar)
+        self.status_bar.setLayout(status_bar_layout)
+        self.layout.addWidget(self.status_bar)
+        self.status_bar.hide()
 
     def config_new_game(self):
         """Configuration et commencement d'une partie."""
-        print("ok")
         self.newG = NewGame(self)
         self.newG.exec_()
         try:
-            self.newG.delay  # test fenêtre a été fermée -> pas de config
+            self.newG.delay  # test si fenêtre a été fermée -> pas de config
+            self.status_bar.show()
             self.begin_game()
-            print("game begins")
+            # print("game begins")
         except AttributeError:
-            print("game doesnt begin")
+            # print("game doesnt begin")
             pass
-
-    # def player_type(self, couleur):
-    #     layout = QFormLayout()
-    #     layout.setFormAlignment(Qt.AlignCenter)
-    # 
-    #     layout.combo = QComboBox()
-    #     layout.combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-    #     layout.combo.addItems(["Humain", "Ordinateur"])
-    # 
-    #     layout.addRow(f"Joueur {couleur} :", layout.combo)
-    #     return layout
-
-    # def load_file(self):
-    #     self.path = QFileDialog.getOpenFileName(None,
-    #                                             "Charger un fichier",
-    #                                             "",
-    #                                             "Fichier de configuration (.txt)")[0]
 
     def begin_game(self, path=None):
         """Démarre une partie de jeu."""
-        
-        # if self.path == '':
-        #     NoFileError(self)
-        #     return
-        # 
-        # self.begin_button.setText("Recommencer")
-        # self.begin_button.clicked.disconnect()  # ne pas avoir la connection précédente
-        # self.begin_button.clicked.connect(self.stop_game)
-        # 
+
         if not self.board_outer_layout.isEmpty():  # si partie déjà en cours
             child = self.board_outer_layout.takeAt(0)
             self.board_outer_layout.removeWidget(child.widget())
@@ -145,12 +145,12 @@ class MainWindow(QMainWindow):
                                self.newG.pos_arrows,
                                self.newG.players.player1.type_.currentIndex(),
                                self.newG.players.player2.type_.currentIndex())
-        # self.board_widget = BoardUI(Amazons(,
-        #                                     self.player1.combo.currentIndex(),
-        #                                     self.player2.combo.currentIndex()),
-        #                             self)
+
         self.board_widget = BoardUI(self.amazons)
         self.board_outer_layout.addWidget(self.board_widget)
+
+        self.delay_slid.slider.setEnabled(True)
+        self.delay_slid.slider.setValue(self.newG.delay)
 
         self.board_widget.timer.start()
 
@@ -167,10 +167,18 @@ class MainWindow(QMainWindow):
             pass
             print("no")
 
+    def save_game(self):
+        # TODO
+        pass
+
+    def change_delay(self, new_val):
+        self.board_widget.delay = new_val
+
     def resizeEvent(self, QResizeEvent):
         """Pour garder un plateau carré en redimentionnant la fenêtre."""
         geo = self.board_outer_layout.geometry()
         diff = abs(geo.width()-geo.height())
+        print(self.geometry().width(), self.geometry().height())
         if geo.width() < geo.height():
             self.board_outer_layout.setContentsMargins(0, int(diff/2), 0, int(diff/2))
         elif geo.width() > geo.height():
@@ -188,16 +196,17 @@ class BoardUI(QWidget):
         self.grid_ui.cells.buttonClicked.connect(self.add_action)
         self.setLayout(self.grid_ui)
 
-        self.status_bar_msg = ("Joueur blanc ({0}) est en cours de rélfexion...",
-                               "Joueur noir ({0}) est en cours de rélfexion...")
+        self.status_bar_msgs = ("Joueur blanc ({0}) est en cours de rélfexion...",
+                                "Joueur noir ({0}) est en cours de rélfexion...")
 
         self.current_player_idx = 1  # deuxième joueur, va être changé dans next_turn()
 
-        delay = 1000
+        self.delay = 2
+
         self.timer = QTimer()
         self.timer.timeout.connect(self.next_turn)
         self.timer.setSingleShot(True)
-        self.timer.setInterval(delay)
+        self.timer.setInterval(500)
 
     def next_turn(self):
         """Joue le prochain tour, humain ou ordinateur."""
@@ -208,11 +217,11 @@ class BoardUI(QWidget):
             # joueur actuel joue
             self.current_player = self.game.players[self.current_player_idx]
             if isinstance(self.current_player, HumanPlayer):
-                self.parent().parent().status_msg.setText(self.status_bar_msg[self.current_player_idx].format("humain"))
+                self.parent().parent().status_msg.setText(self.status_bar_msgs[self.current_player_idx].format("humain"))
                 self.human_turn_begin()
             else:
-                self.parent().parent().status_msg.setText(self.status_bar_msg[self.current_player_idx].format("ordinateur"))
-                action = self.current_player.play()
+                self.parent().parent().status_msg.setText(self.status_bar_msgs[self.current_player_idx].format("ordinateur"))
+                action = self.current_player.play(delay=self.delay)
                 self.update_from_action(action)
                 self.timer.start()
                 # self.next_turn()
