@@ -1,4 +1,5 @@
 import random
+import time
 from abc import ABCMeta, abstractmethod
 from const import *
 from exceptions import *
@@ -20,11 +21,14 @@ class Player(metaclass=ABCMeta):
     def _play(self):
         pass
 
-    def play(self, coup=None):
+    def play(self, coup=None, delay=None):
         """
         Détermine l'action à effectuer et la joue sur le plateau
         """
-        action = self._play(coup)
+        if delay is None:
+            action = self._play(coup)
+        else:
+            action = self._play(coup, delay)
         self.board.act(action)
         return action
 
@@ -75,14 +79,37 @@ class AIPlayer(Player):
     def __init__(self, board, player_id):
         super().__init__(board, player_id)
 
-    def _play(self, coup=None):
+    def _play(self, coup=None, delay=2):
         """
         Détermine le meilleur coup à jouer
 
         Returns:
             Action: le meilleur coup déterminé via minimax
         """
-        return self.minimax()[0]
+        self.timer_beg = time.time()
+        self.delay = delay
+        self.return_single_delay = 0.0002
+        self.return_delay = 0
+        depth = 1
+        best_score = None
+        while time.time() - self.timer_beg + self.return_single_delay < self.delay:
+            ret, score = self.minimax(depth)
+            if best_score is None and ret is not None:
+                print(ret, score)
+                best_ret = ret
+                best_score = score
+            elif score >= best_score and ret is not None:
+                print(ret, score)
+                best_ret = ret
+                best_score = score
+            depth += 1
+        print(time.time()- self.timer_beg)
+        assert time.time()- self.timer_beg < self.delay
+        return best_ret
+
+    def time_check(self):
+        if time.time()-self.timer_beg >= self.delay:
+            self._play(end=True)
 
     def minimax(self, depth=2, maximizing=True):
         """
@@ -95,6 +122,9 @@ class AIPlayer(Player):
         Returns:
             Action: le meilleur coup trouvé dans la profondeur explorée
         """
+        self.return_delay += self.return_single_delay
+        if time.time() - self.timer_beg + self.return_delay >= self.delay:
+             return (None, 0)
         if depth == 0:
             return (None, DRAW)
         if maximizing:
@@ -114,6 +144,7 @@ class AIPlayer(Player):
                     score *= -1
             else:
                 score = self.minimax(depth-1, not maximizing)[1]
+                self.return_delay -= self.return_single_delay
             self.board.undo()
             # Si on trouve un meilleur score
             if (score > best_score and maximizing) or (score < best_score and not maximizing):
@@ -121,5 +152,7 @@ class AIPlayer(Player):
                 best_actions = [action]
             elif score == best_score:
                 best_actions.append(action)
+            if time.time() - self.timer_beg + self.return_delay >= self.delay:
+                break
         return random.choice(best_actions), best_score
 
