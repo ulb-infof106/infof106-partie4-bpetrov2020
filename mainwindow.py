@@ -21,6 +21,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()  # initialiser QMainWindow
 
+        self.newG = NewGame(self)
         self.layout = QVBoxLayout()
         # self.layout.setContentsMargins(10,10,10,5)
         # self.layout.setSpacing(5)
@@ -120,7 +121,7 @@ class MainWindow(QMainWindow):
 
     def config_new_game(self):
         """Configuration et commencement d'une partie."""
-        self.newG = NewGame(self)
+        # self.newG = NewGame(self)
         self.newG.exec_()
         try:
             self.newG.delay  # test si fenêtre a été fermée -> pas de config
@@ -143,31 +144,38 @@ class MainWindow(QMainWindow):
                                self.newG.pos_black,
                                self.newG.pos_white,
                                self.newG.pos_arrows,
-                               self.newG.players.player1.type_.currentIndex(),
-                               self.newG.players.player2.type_.currentIndex())
+                               self.newG.player1,
+                               self.newG.player2)
 
         self.board_widget = BoardUI(self.amazons)
         self.board_outer_layout.addWidget(self.board_widget)
 
-        self.delay_slid.slider.setEnabled(True)
+        if self.newG.player1 or self.newG.player2:
+            self.delay_slid.slider.setEnabled(True)
         self.delay_slid.slider.setValue(self.newG.delay)
 
         self.board_widget.timer.start()
 
-    def stop_game(self):
-        out = StopGame(self).exec_()
-        print(out)
-        if out == 16384:  # valeur retournée pour un oui
-            print("yes")
-            self.board_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
-            self.begin_button.setText("Commencer la partie")
-            self.begin_button.clicked.disconnect()
-            self.begin_button.clicked.connect(self.begin_game)
-        else:
-            pass
-            print("no")
+    # def stop_game(self):
+    #     out = StopGame(self).exec_()
+    #     print(out)
+    #     if out == 16384:  # valeur retournée pour un oui
+    #         print("yes")
+    #         self.board_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+    #         self.begin_button.setText("Commencer la partie")
+    #         self.begin_button.clicked.disconnect()
+    #         self.begin_button.clicked.connect(self.begin_game)
+    #     else:
+    #         pass
+    #         print("no")
 
     def save_game(self):
+        # TODO
+        pass
+
+    def replay_game(self):
+        # replay_file = 
+        # self.board
         # TODO
         pass
 
@@ -178,7 +186,7 @@ class MainWindow(QMainWindow):
         """Pour garder un plateau carré en redimentionnant la fenêtre."""
         geo = self.board_outer_layout.geometry()
         diff = abs(geo.width()-geo.height())
-        print(self.geometry().width(), self.geometry().height())
+        # print(self.geometry().width(), self.geometry().height())
         if geo.width() < geo.height():
             self.board_outer_layout.setContentsMargins(0, int(diff/2), 0, int(diff/2))
         elif geo.width() > geo.height():
@@ -196,8 +204,8 @@ class BoardUI(QWidget):
         self.grid_ui.cells.buttonClicked.connect(self.add_action)
         self.setLayout(self.grid_ui)
 
-        self.status_bar_msgs = ("Joueur blanc ({0}) est en cours de rélfexion...",
-                                "Joueur noir ({0}) est en cours de rélfexion...")
+        self.status_bar_msgs = ("Joueur blanc ({0}) est en cours de réflexion...",
+                                "Joueur noir ({0}) est en cours de réflexion...")
 
         self.current_player_idx = 1  # deuxième joueur, va être changé dans next_turn()
 
@@ -206,7 +214,7 @@ class BoardUI(QWidget):
         self.timer = QTimer()
         self.timer.timeout.connect(self.next_turn)
         self.timer.setSingleShot(True)
-        self.timer.setInterval(500)
+        self.timer.setInterval(100)
 
     def next_turn(self):
         """Joue le prochain tour, humain ou ordinateur."""
@@ -258,7 +266,11 @@ class BoardUI(QWidget):
             self.human_turn_end()
 
     def declare_winner(self):
-        WinnerMsg(self.game.show_winner(), self.parent())
+        # print(self.game.board.history)
+        self.parent().parent().delay_slid.slider.setEnabled(False)
+        winner_msg, winner_str = self.game.show_winner()
+        self.parent().parent().status_msg.setText(f"La partie est finie. Joueur {winner_str} a gagné !")
+        WinnerMsg(winner_msg, self.parent())
 
     def set_state(self, state=True):
         """Active et désactive le plateau de jeu.
@@ -293,5 +305,6 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_window = MainWindow()
     app.exit(app.exec_())
+
 
 
