@@ -60,18 +60,26 @@ class Amazons:
         current_player_idx (int): indice du joueur dont c'est le tour
         status (EndOfGameStatus): état de la fin de partie
     """
-    def __init__(self, path, player1=HUMAN, player2=AI):
+    def __init__(self, path=None, player1=HUMAN, player2=AI):
         """
         Args:
             path (str): chemin vers le fichier représentant le plateau
         """
-        self.board = Board(*read_file(path))
-        self.players = []
-        self.players.append(HumanPlayer(self.board, PLAYER_1) if player1 == HUMAN else AIPlayer(self.board, PLAYER_1))
-        self.players.append(HumanPlayer(self.board, PLAYER_2) if player2 == HUMAN else AIPlayer(self.board, PLAYER_2))
+        if path is not None:
+            self.board = Board(*read_file(path))
+            self.players = []
+            self.players.append(HumanPlayer(self.board, PLAYER_1) if player1 == HUMAN else AIPlayer(self.board, PLAYER_1))
+            self.players.append(HumanPlayer(self.board, PLAYER_2) if player2 == HUMAN else AIPlayer(self.board, PLAYER_2))
         # self.players = (HumanPlayer(self.board, PLAYER_1), AIPlayer(self.board, PLAYER_2))
         self.current_player_idx = 0
         self.status = None
+
+    def set_board(self, size, pos_black, pos_white, pos_arrows, player1, player2):
+        print(size, pos_black, pos_white, pos_arrows, player1, player2)
+        self.board = Board(size, pos_black, pos_white, pos_arrows)
+        self.players = []
+        self.players.append(HumanPlayer(self.board, PLAYER_1) if player1 == HUMAN else AIPlayer(self.board, PLAYER_1))
+        self.players.append(HumanPlayer(self.board, PLAYER_2) if player2 == HUMAN else AIPlayer(self.board, PLAYER_2))
 
     def play(self):
         """
@@ -98,6 +106,7 @@ class Amazons:
         return self.status.over
 
     def show_winner(self):
-        winner = '1' if self.status.winner == PLAYER_1 else '2'
-        winner_msg = f'Player {winner} won: {self.status.winner_score} vs {self.status.loser_score}!'
-        return winner_msg
+        colors = ("blanc", "noir")
+        winner = 0 if self.status.winner == PLAYER_1 else 1
+        winner_msg = f'Le joueur {colors[winner]} a gagné avec {self.status.winner_score} contre {self.status.loser_score} pour le joueur {colors[1-winner]}. Félicitations !'
+        return winner_msg, colors[winner]
