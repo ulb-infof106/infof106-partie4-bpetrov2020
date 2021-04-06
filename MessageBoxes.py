@@ -26,12 +26,25 @@ class BeginError(QMessageBox):
         self.setWindowTitle("La partie n'a pas pu commencer")
         self.setIcon(QMessageBox.Warning)
 
+class LoadFileError(QMessageBox):
 
-class NoFileError(BeginError):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Erreur au chargement du fichier")
+        self.setIcon(QMessageBox.Warning)
+
+class NoFileError(LoadFileError):
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setText("Aucun fichier de configuration n'a été chargé.")
+        self.exec_()
+
+class InvalidFormatErrorMsg(LoadFileError):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText("Une erreur est survenue lors de la lecture du fichier.")
         self.exec_()
 
 
