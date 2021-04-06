@@ -21,6 +21,7 @@ class NewGame(QDialog):
         super().__init__(parent)
 
         self.resize(565, 796)
+        # self.setGeometry(400,400,565, 1000)
         self.setWindowTitle("Configuration de la partie")
         self.layout = QVBoxLayout()
 
@@ -35,9 +36,10 @@ class NewGame(QDialog):
         self.layout.addWidget(beg_game_button)
 
         self.setLayout(self.layout)
+        self.custom_board.spinner.setValue(5)
         # self.exec_()
 
-    def resizeEvent(self, QResizeEvent):
+    def resizeEvent(self, QResizeEvent=None):
         width = self.custom_board.grid.horizontalHeader().sectionSize(0)
         self.custom_board.grid.verticalHeader().setDefaultSectionSize(width)
 
@@ -57,21 +59,9 @@ class NewGame(QDialog):
             return
         self.delay = self.players.delay_slider.value
         print(self.delay)
+        self.player1 = self.players.player1.type_.currentIndex()
+        self.player2 = self.players.player2.type_.currentIndex()
 
-        # # self.board.amazons.
-        # print(self.players.white.type_.currentText())
-        # if self.players.white.type_.currentText() == "Humain":
-        #     player1 = (HumanPlayer(self.board.amazons.board, PLAYER_1))
-        # else:
-        #     player1 = (AIPlayer(self.board.amazons.board, PLAYER_1))
-        # 
-        # if self.players.black.type_.currentText() == "Humain":
-        #     player2 = (HumanPlayer(self.board.amazons.board, PLAYER_2))
-        # else:
-        #     player2 = (AIPlayer(self.board.amazons.board, PLAYER_2))
-        # 
-        # self.board.amazons.players = (player1, player2)
-        # self.game = self.board.amazons
         self.close()
 
 
@@ -135,17 +125,19 @@ class DelaySlider(QFormLayout):
         super().__init__()
 
         self.setFormAlignment(Qt.AlignRight)
-        self.addRow(f"Délais IA :", self.diff_slider())
+        self.addRow(f"Délais IA :", self.delay_slider())
 
-    def diff_slider(self):
+    def delay_slider(self):
         """Création du slider de délais de l'IA. Plus élevé = plus dur."""
         self.slider = QSlider(Qt.Horizontal)
+        self.slider.setMinimumWidth(200)
         self.slider.setEnabled(False)
         self.slider.setTickPosition(QSlider.TicksBelow)
 
         self.slider.setRange(1, 10)
         self.slider.setSingleStep(1)
         self.slider.setTickInterval(1)
+        self.slider.setValue(2)
         return self.slider
 
     @property
@@ -197,21 +189,6 @@ class CustomBoard(QVBoxLayout):
         self.pos_black = []
         self.pos_white = []
         self.size = self.spinner.value()
-        # for j in range(size):
-        #     for i in range(size):
-        #         cell = self.grid.cellWidget(i, j)
-        #         # print(self.board.itemAt(i, j))
-        #         # print(cell)
-        #         if cell is not None:
-        #             # print(cell.type_)
-        #             if cell.type_ == 0:
-        #                 pos_white.append(f'{letters[j]}{-(i-size)}')
-        #             elif cell.type_ == 1:
-        #                 pos_black.append(f'{letters[j]}{-(i-size)}')
-        #             elif cell.type_ == 2:
-        #                 pos_arrows.append(f'{letters[j]}{-(i-size)}')
-        # 
-        # print(pos_arrows, pos_white, pos_black)
         for cell in self.grid:
             if cell.id_ == 0:
                 self.pos_white.append(cell.coord_str)
@@ -259,9 +236,15 @@ class CustomBoard(QVBoxLayout):
                                                "Fichier amazones (.txt)")[0]
         # print(self.board.itemAt(0,0).text())
         # self.to_amazon(filename[0])
-        self.amazons = Amazons(filename)
+        if filename == '':
+            NoFileError(self.parent().parent())
+            return
+        try:
+            self.amazons = Amazons(filename)
         # self.to_amazon(filename[0])
-        self.from_amazon()
+            self.from_amazon()
+        except InvalidFormatError:
+            InvalidFormatErrorMsg(self.parent().parent())
         # size, pos_black, pos_white, pos_arrows = read_file(filename[0])
 
         # self.spinner.setValue(size)
@@ -297,10 +280,12 @@ class CustomBoard(QVBoxLayout):
         """Change la taille du plateau selon la valeur du spinner."""
         self.grid.setRowCount(new_size)
         self.grid.setColumnCount(new_size)
-        self.grid.size_changed(new_size)
+
         # change également la hauteur des cellules pour qu'elles soient carrées
         width = self.grid.horizontalHeader().sectionSize(0)
         self.grid.verticalHeader().setDefaultSectionSize(width)
+
+        self.grid.size_changed(new_size)
 
     def size_spinner(self):
         self.spinner = QSpinBox()
@@ -358,6 +343,9 @@ class CustomGridUI(QTableWidget):
     def __init__(self):
         super().__init__(1, 1)
         self.size = 1
+        # self.setViewportMargins(20,20,20,20)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
@@ -427,7 +415,7 @@ class CustomGridCell(QWidget):
         layout = QHBoxLayout()
         layout.setAlignment(Qt.AlignCenter)
 
-        self.margin = 6
+        self.margin = 4
         layout.setContentsMargins(self.margin, self.margin, self.margin, self.margin)
 
         layout.addWidget(self.token)
