@@ -477,7 +477,7 @@ class Board:
                             route que l'on doit ignorer (None si aucune telle case)
 
         Returns:
-            bool: True si pos2 ests accessible depuis pos1
+            bool: True si pos2 est accessible depuis pos1
         """
         pos = pos1 + direction
         if pos == pos2:
