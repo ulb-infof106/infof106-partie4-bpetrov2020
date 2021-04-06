@@ -86,30 +86,61 @@ class AIPlayer(Player):
         Returns:
             Action: le meilleur coup déterminé via minimax
         """
+        print("ID", self.player_id, "white 0, black 1")
         self.timer_beg = time.time()
         self.delay = delay
-        self.return_single_delay = 0.0002
+        self.return_single_delay = 0.004
         self.return_delay = 0
         depth = 1
         best_score = None
         while time.time() - self.timer_beg + self.return_single_delay < self.delay:
             ret, score = self.minimax(depth)
             if best_score is None and ret is not None:
-                print(ret, score)
+                # print(ret, score)
                 best_ret = ret
                 best_score = score
             elif score >= best_score and ret is not None:
-                print(ret, score)
+                # print(ret, score)
                 best_ret = ret
                 best_score = score
             depth += 1
         print(time.time()- self.timer_beg)
         assert time.time()- self.timer_beg < self.delay
+        print(best_ret, best_score)
+        # print(self.board.label_components())
+        print(self.accessible_cells())
         return best_ret
 
-    def time_check(self):
-        if time.time()-self.timer_beg >= self.delay:
-            self._play(end=True)
+    def accessible_cells(self):
+        components, components_ids = self.board.label_components()
+        score = 0
+        for component in components:
+            current, opponent = 0, 0
+            for queen in self.board.queens[self.player_id]:
+                if queen in component:
+                    current += 1
+            for queen in self.board.queens[self.other_player_id]:
+                if queen in component:
+                    opponent += 1
+            if opponent < current:
+                score += len(component) / (current+opponent) * (current-opponent)
+            elif opponent > current:
+                score -= len(component) / (current+opponent) * (opponent-current)
+        return score
+        # queens_ids = {}
+        # player_id = self.player_id
+        # score = 0
+        # for _ in range(2):
+        #     for queen in self.board.queens[player_id]:
+        #         queen_id = components_ids[queen]
+        #         if queen_id not in queens_ids:
+        #             queens_ids[queen_id] = [(queen, player_id)]
+        #         else:
+        #             queens_ids[queen_id].append((queen, player_id))
+        #     player_id = self.other_player_id
+        # for id_ in queens_ids:
+            
+            
 
     def minimax(self, depth=2, maximizing=True):
         """
@@ -126,7 +157,12 @@ class AIPlayer(Player):
         if time.time() - self.timer_beg + self.return_delay >= self.delay:
              return (None, 0)
         if depth == 0:
-            return (None, DRAW)
+            # print(self.board)
+            # self.adjacent_moves()
+            # time.sleep(5)
+            print(self.board, self.objective_function())
+            return (None, self.objective_function())
+            # return (None, DRAW)
         if maximizing:
             best_score = -INF
             player = self.player_id
@@ -156,3 +192,48 @@ class AIPlayer(Player):
                 break
         return random.choice(best_actions), best_score
 
+    def objective_function(self):
+        # if isolated:
+        #     pass # TODO
+        # else:
+        #     pass # TODO
+        score = self.accessible_cells()
+        # if score 
+        score += self.adjacent_moves()
+        # if self.board.check_regions():
+        #     score_curr = self.board.scores[self.player_id]
+        #     score_other = self.board.scores[self.other_player_id]
+        #     score += score_curr - score_other
+        return score
+
+    def adjacent_moves(self):
+        """18n2 - 36n + 18 cases au maximum"""
+        curr_score, other_score = 0, 0
+        for queen in self.board.queens[self.player_id]:
+            # for _ in self.board.possible_actions(self.player_id):
+            for _ in self.board._possible_moves_from(queen):
+                curr_score += 1
+        for queen in self.board.queens[self.other_player_id]:
+            # for _ in self.board.possible_actions(self.other_player_id):
+            for _ in self.board._possible_moves_from(queen):
+                other_score += 1
+        # for queen in self.board.queens[self.player_id]:
+        #     for dir_ in DIRECTIONS:
+        #         # print(queen, queen+dir_)
+        #         if self.board.is_valid_pos(queen+dir_)\
+        #            and self.board.at(queen+dir_) == EMPTY:
+        #             curr_score += 1
+        #         # print(score)
+        # 
+        # for queen in self.board.queens[self.other_player_id]:
+        #     for dir_ in DIRECTIONS:
+        #         # print(queen, queen+dir_)
+        #         if self.board.is_valid_pos(queen+dir_)\
+        #            and self.board.at(queen+dir_) == EMPTY:
+        #             other_score += 1
+                # print(score)
+        return curr_score - 2*other_score
+        # time.sleep(3)
+        # return current_player - other_player
+        # print(current_player - other_player)
+                
