@@ -62,3 +62,20 @@ class OneSizeBoard(BeginError):
         super().__init__(parent)
         self.setText("Mais comment voulez-vous jouer avec seulement une case !?")
         self.exec_()
+
+class QuitMessage(QMessageBox):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Quitter le jeu")
+        self.setText("Voulez-vous sauvegarder votre partie avant de quitter ?")
+        self.setIcon(QMessageBox.Information)
+        self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Save | QMessageBox.Discard)
+# class SaveError(QMessageBox):
+# 
+#     def __init__(self, parent=None):
+#         super().__init__(parent)
+#         self.setWindowTitle("Erreur à la sauvegarde du fichier")
+#         self.setIcon(QMessageBox.Warning)
+#         self.setText("Impossible de sauvegarder un partie qui n'a pas encore commencée...")
+#         self.exec_()

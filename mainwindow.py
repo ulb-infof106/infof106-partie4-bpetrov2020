@@ -51,6 +51,17 @@ class MainWindow(QMainWindow):
         self.new_game.triggered.connect(self.config_new_game)
         game_menu.addAction(self.new_game)
 
+        self.save_game = QAction()  # sauvegarder la configuration actuelle
+        self.save_game.setText("Sauvegarder la partie...")
+        self.save_game.triggered.connect(self.save_game_)
+        self.save_game.setEnabled(False)
+        game_menu.addAction(self.save_game)
+
+        self.quit_game = QAction()  # quitter la partie
+        self.quit_game.setText("Quitter")
+        self.quit_game.triggered.connect(self.close)
+        game_menu.addAction(self.quit_game)
+
     def add_board_placeholder(self):
         """Placeholder pour le plateau qui va être ajouté par la suite."""
         self.greet_layout = QVBoxLayout()
@@ -154,6 +165,8 @@ class MainWindow(QMainWindow):
             self.delay_slid.slider.setEnabled(True)
         self.delay_slid.slider.setValue(self.newG.delay)
 
+        self.save_game.setEnabled(True)
+
         self.board_widget.timer.start()
 
     # def stop_game(self):
@@ -169,9 +182,31 @@ class MainWindow(QMainWindow):
     #         pass
     #         print("no")
 
-    def save_game(self):
-        # TODO
-        pass
+    def save_game_(self):
+        """Permet de sauvegarder la configuration de la partie.
+
+            Ce n'est pas une sauvegarde avec les types des joueurs, etc.
+        Juste les positions des blancs, des noirs et des flèches, un fichier
+        de configuration typique.
+        """
+        save_filename = QFileDialog.getSaveFileName(self,
+                                                    "Ouvrir un fichier",
+                                                    "",
+                                                    "Fichier texte(.txt)")[0]
+        if save_filename != "":  # si annulé
+            if save_filename[-4:] != ".txt":
+                save_filename += ".txt"
+            save_file = open(f"{save_filename}", "w", encoding="utf-8")
+            save_file.write(f'{self.amazons.board.N}\n')
+            tokens = ([], [], [], [])
+            for row in self.board_widget.grid_ui:
+                for col in row:
+                    if col.id_ != 2:
+                        tokens[col.id_].append(col.coord_str)
+            save_file.write(f"{','.join(tokens[0])}\n")
+            save_file.write(f"{','.join(tokens[1])}\n")
+            save_file.write(f"{','.join(tokens[3])}")
+            save_file.close()
 
     def replay_game(self):
         # replay_file = 
@@ -180,17 +215,34 @@ class MainWindow(QMainWindow):
         pass
 
     def change_delay(self, new_val):
+        """Changer le délais de l'ia"""
         self.board_widget.delay = new_val
 
     def resizeEvent(self, QResizeEvent):
         """Pour garder un plateau carré en redimentionnant la fenêtre."""
         geo = self.board_outer_layout.geometry()
-        diff = abs(geo.width()-geo.height())
+        # diff = abs(geo.width()-geo.height())
         # print(self.geometry().width(), self.geometry().height())
         if geo.width() < geo.height():
-            self.board_outer_layout.setContentsMargins(0, int(diff/2), 0, int(diff/2))
+            self.board_widget.setMaximumHeight(geo.width())
+            self.board_widget.setMaximumWidth(geo.width())
+            # self.board_outer_layout.setContentsMargins(0, int(diff/2), 0, int(diff/2))
         elif geo.width() > geo.height():
-            self.board_outer_layout.setContentsMargins(int(diff/2), 0, int(diff/2), 0)
+            self.board_widget.setMaximumWidth(geo.height())
+            self.board_widget.setMaximumHeight(geo.height())
+            # self.board_outer_layout.setContentsMargins(int(diff/2), 0, int(diff/2), 0)
+
+    def closeEvent(self, QCloseEvent=None):
+        """Implémentation d'un 'sauvegarder avant de quitter'."""
+        state = True
+        if isinstance(self.board_widget, BoardUI):  # pas besoin si pas de partie
+            state = QuitMessage(self).exec_()
+        if state == QMessageBox.Cancel:
+            QCloseEvent.ignore()
+        else:
+            if state == QMessageBox.Save:
+                self.save_game_()
+            QCloseEvent.accept()
 
 
 class BoardUI(QWidget):
