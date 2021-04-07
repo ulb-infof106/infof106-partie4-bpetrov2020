@@ -230,10 +230,10 @@ class CustomBoard(QVBoxLayout):
         # pass
 
     def load_file(self):
-        filename = QFileDialog.getOpenFileName(None,
+        filename = QFileDialog.getOpenFileName(self.parent().parent(),
                                                "Ouvrir un fichier",
                                                "",
-                                               "Fichier amazones (.txt)")[0]
+                                               "Fichier texte (.txt)")[0]
         # print(self.board.itemAt(0,0).text())
         # self.to_amazon(filename[0])
         if filename == '':
@@ -243,7 +243,7 @@ class CustomBoard(QVBoxLayout):
             self.amazons = Amazons(filename)
         # self.to_amazon(filename[0])
             self.from_amazon()
-        except InvalidFormatError:
+        except (InvalidFormatError, InvalidPositionError):
             InvalidFormatErrorMsg(self.parent().parent())
         # size, pos_black, pos_white, pos_arrows = read_file(filename[0])
 
@@ -326,7 +326,7 @@ class CustomBoard(QVBoxLayout):
 
         tokens_names = ("Blancs", "Noirs", "Vide", "Flèches")
         self.top_bar_group = QButtonGroup()
-        self.top_bar_group.idClicked.connect(self.fill_selection)
+        self.top_bar_group.idPressed.connect(self.fill_selection)
         n = 0  # id des boutons
         for name in tokens_names:
             button = self.config_button(name)
