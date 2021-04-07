@@ -15,7 +15,11 @@ class TournoiAIPlayer(Player):
 
     Améliorations:
         L'amélioration principale est dans le fonction objective_function.
-        Dans cette dernière, 
+        Dans cette dernière, dans chaque composante du plateau sont calculés
+        soit les cases accessibles à un joueur s'il est seul à y avoir des reines,
+        soit les mouvements qu'il peut effectuer dans cette composante.
+        En plus de cela, un approfondissement itératif est réalisé pour tirer
+        profit du temps limité.
     """
     def __init__(self, board, player_id):
         super().__init__(board, player_id)
@@ -30,7 +34,7 @@ class TournoiAIPlayer(Player):
         self.timer_beg = time.time()  # début du timer
         self.delay = delay
 
-        self.return_single_delay = 0.005*self.board.N
+        self.return_single_delay = 0.01*self.board.N  # délais pour ressorir d'une instance de minimax
         self.return_delay = 0  # délais pour resortir de minimax
 
         depth = 1
@@ -46,11 +50,8 @@ class TournoiAIPlayer(Player):
                 best_ret = ret
                 best_score = score
             depth += 1
-        print(time.time()- self.timer_beg)
-        assert time.time()- self.timer_beg < self.delay
-        print(best_ret, best_score)
-        # print(self.board.label_components())
-        # print(self.accessible_cells())
+        # print(time.time()- self.timer_beg)
+        # assert time.time()- self.timer_beg < self.delay
         return best_ret
 
     def minimax(self, depth=2, maximizing=True):
@@ -103,11 +104,12 @@ class TournoiAIPlayer(Player):
         score, current, other = 0, 0, 0
         alone = True
         components, components_ids = self.board.label_components()
+
         for component in components:
             player, count = self.board.count_queens(component)
-            if player == self.player_id and count != 0:
+            if player == self.player_id and count != 0:  # joueur seul dans composante
                 current += (len(component)-count)/count
-            elif player == self.other_player_id and count != 0:
+            elif player == self.other_player_id and count != 0:  # adversaire seul dans composante
                 other += (len(component)-count)/count
             else:
                 alone = False  # tous pions pas isolés
@@ -115,10 +117,9 @@ class TournoiAIPlayer(Player):
 
         if alone:  # si tous les pions sont isolés
             if current >= other and maximizing:
-                score += 100
-            elif current < other and not maximizing:
-                score -= 100
-        print(self.board,score +current-other, score, current, other)
+                score += 1000 * (current-other)  # plus grande différence est mieux
+            elif current <= other and not maximizing:
+                score -= 1000 * (other - current)
         return (score + current - other)/10
 
     def movements_component(self, component):
