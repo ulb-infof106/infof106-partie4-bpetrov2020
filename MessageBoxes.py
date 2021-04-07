@@ -26,6 +26,7 @@ class BeginError(QMessageBox):
         self.setWindowTitle("La partie n'a pas pu commencer")
         self.setIcon(QMessageBox.Warning)
 
+
 class LoadFileError(QMessageBox):
 
     def __init__(self, parent=None):
@@ -33,12 +34,14 @@ class LoadFileError(QMessageBox):
         self.setWindowTitle("Erreur au chargement du fichier")
         self.setIcon(QMessageBox.Warning)
 
+
 class NoFileError(LoadFileError):
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setText("Aucun fichier de configuration n'a été chargé.")
         self.exec_()
+
 
 class InvalidFormatErrorMsg(LoadFileError):
 
@@ -63,6 +66,7 @@ class OneSizeBoard(BeginError):
         self.setText("Mais comment voulez-vous jouer avec seulement une case !?")
         self.exec_()
 
+
 class QuitMessage(QMessageBox):
 
     def __init__(self, parent=None):
@@ -71,11 +75,13 @@ class QuitMessage(QMessageBox):
         self.setText("Voulez-vous sauvegarder votre partie avant de quitter ?")
         self.setIcon(QMessageBox.Information)
         self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Save | QMessageBox.Discard)
-# class SaveError(QMessageBox):
-# 
-#     def __init__(self, parent=None):
-#         super().__init__(parent)
-#         self.setWindowTitle("Erreur à la sauvegarde du fichier")
-#         self.setIcon(QMessageBox.Warning)
-#         self.setText("Impossible de sauvegarder un partie qui n'a pas encore commencée...")
-#         self.exec_()
+
+
+class InvalidActionErrorMsg(QMessageBox):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Erreur de coup")
+        self.setIcon(QMessageBox.Information)
+        self.setText("Le coup n'est pas valide. Veuillez réessayer...")
+        self.exec_()
