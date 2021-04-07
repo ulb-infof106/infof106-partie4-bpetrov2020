@@ -33,6 +33,7 @@ class MainWindow(QMainWindow):
         self.setMinimumWidth(730)
 
         self.add_menu_bar()
+        self.add_tool_bar()
         self.add_board_placeholder()
         self.add_custom_status_bar()
 
@@ -48,19 +49,34 @@ class MainWindow(QMainWindow):
 
         self.new_game = QAction()
         self.new_game.setText("Nouvelle partie...")  # commencer une nouvelle partie
+        self.new_game.setIcon(QIcon(QPixmap("new.svg")))
         self.new_game.triggered.connect(self.config_new_game)
         game_menu.addAction(self.new_game)
 
         self.save_game = QAction()  # sauvegarder la configuration actuelle
         self.save_game.setText("Sauvegarder la partie...")
+        self.save_game.setIcon(QIcon(QPixmap("save.svg")))
         self.save_game.triggered.connect(self.save_game_)
         self.save_game.setEnabled(False)
         game_menu.addAction(self.save_game)
 
         self.quit_game = QAction()  # quitter la partie
         self.quit_game.setText("Quitter")
+        self.quit_game.setIcon(QIcon(QPixmap("exit.svg")))
         self.quit_game.triggered.connect(self.close)
         game_menu.addAction(self.quit_game)
+
+    def add_tool_bar(self):
+        """Ajout de la barre d'outils."""
+        self.tool_bar = QToolBar()
+
+        self.pause_game = QAction()
+        self.pause_game.setIcon(QIcon(QPixmap("pause.svg")))
+        self.pause_game.triggered.connect(self.pause_game_)
+        self.tool_bar.addAction(self.pause_game)
+
+        self.layout.addWidget(self.tool_bar)
+        self.tool_bar.hide()
 
     def add_board_placeholder(self):
         """Placeholder pour le plateau qui va être ajouté par la suite."""
@@ -130,6 +146,20 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.status_bar)
         self.status_bar.hide()
 
+    def pause_game_(self):
+        """Permet de mettre le jeu en pause.
+
+            Lorsque le jeu est en pause, personne ne peut jouer.
+        Ni IAs, ni humains.
+        """
+        if self.board_widget.paused is False:
+            self.pause_game.setIcon(QIcon(QPixmap("start.svg")))
+            self.board_widget.paused = True
+        else:
+            self.pause_game.setIcon(QIcon(QPixmap("pause.svg")))
+            self.board_widget.paused = False
+            self.board_widget.timer.start()
+
     def config_new_game(self):
         """Configuration et commencement d'une partie."""
         # self.newG = NewGame(self)
@@ -166,6 +196,7 @@ class MainWindow(QMainWindow):
         self.delay_slid.slider.setValue(self.newG.delay)
 
         self.save_game.setEnabled(True)
+        self.tool_bar.show()
 
         self.board_widget.timer.start()
 
@@ -262,6 +293,7 @@ class BoardUI(QWidget):
         self.current_player_idx = 1  # deuxième joueur, va être changé dans next_turn()
 
         self.delay = 2
+        self.paused = False  # détermine si la partie est en pause
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.next_turn)
@@ -270,10 +302,12 @@ class BoardUI(QWidget):
 
     def next_turn(self):
         """Joue le prochain tour, humain ou ordinateur."""
-        self.current_player_idx = 1-self.current_player_idx  # passer au joueur suivant
-        if self.game.is_over():
+        if self.paused:
+            return
+        elif self.game.is_over():
             self.declare_winner()
         else:
+            self.current_player_idx = 1-self.current_player_idx  # passer au joueur suivant
             # joueur actuel joue
             self.current_player = self.game.players[self.current_player_idx]
             if isinstance(self.current_player, HumanPlayer):
