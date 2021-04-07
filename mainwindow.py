@@ -215,8 +215,8 @@ class MainWindow(QMainWindow):
                     if col.id_ != 2:
                         tokens[col.id_].append(col.coord_str)
 
-            save_file.write(f"{','.join(tokens[0])}\n")  # positions blancs
             save_file.write(f"{','.join(tokens[1])}\n")  # positions noirs
+            save_file.write(f"{','.join(tokens[0])}\n")  # positions blancs
             save_file.write(f"{','.join(tokens[3])}")    # positions flèches
             save_file.close()
 
