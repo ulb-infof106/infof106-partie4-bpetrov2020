@@ -330,7 +330,7 @@ class BoardUI(QWidget):
             self.action.append(action.coord_str)
         else:
             self.action.append(f'>{action.coord_str}')
-        print(self.action)
+        # print(self.action)
         assert len(self.action) <= 3
         if len(self.action) == 3:
             self.human_turn_end()

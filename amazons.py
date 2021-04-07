@@ -82,7 +82,7 @@ class Amazons:
         self.status = None
 
     def set_board(self, size, pos_black, pos_white, pos_arrows, player1, player2):
-        print(size, pos_black, pos_white, pos_arrows, player1, player2)
+        # print(size, pos_black, pos_white, pos_arrows, player1, player2)
         self.board = Board(size, pos_black, pos_white, pos_arrows)
         self.players = []
         self.players.append(HumanPlayer(self.board, PLAYER_1) if player1 == HUMAN else AIPlayer(self.board, PLAYER_1))

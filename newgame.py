@@ -64,7 +64,7 @@ class NewGame(QDialog):
             NotEnoughTokens(self)
             return
         self.delay = self.players.delay_slider.value
-        print(self.delay)
+        # print(self.delay)
         self.player1 = self.players.player1.type_.currentIndex()
         self.player2 = self.players.player2.type_.currentIndex()
 
