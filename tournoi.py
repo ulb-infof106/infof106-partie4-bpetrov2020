@@ -1,32 +1,17 @@
-import random
-from const import *
-from exceptions import *
+from players import Player
 from action import Action
+from const import *
 import time
+import random
 
-class TournoiAIPlayer():
+class TournoiAIPlayer(Player):
     """
     Spécialisation de la classe Player représentant un joueur utilisant un minimax
     """
     def __init__(self, board, player_id):
-        self.board = board
-        self.player_id = player_id
+        super().__init__(board, player_id)
 
-    @property
-    def other_player_id(self):
-        """
-        int: l'id du joueur adverse
-        """
-        return PLAYER_2 if self.player_id == PLAYER_1 else PLAYER_1
-
-    def play(self):
-        """
-        Détermine l'action à effectuer et la joue sur le plateau
-        """
-        action = self._play()
-        self.board.act(action)
-
-    def _play(self, delay=2):
+    def _play(self, coup=None, delay=2):
         """
         Détermine le meilleur coup à jouer
 
@@ -38,23 +23,24 @@ class TournoiAIPlayer():
         self.delay = delay
         self.return_single_delay = 0.0005*self.board.N
         self.return_delay = 0
-
         depth = 1
         best_score = None
-
-        while time.time() - self.timer_beg + 0.0002 < self.delay:
-            ret, score = self.minimax(depth)
+        while time.time() - self.timer_beg + self.return_single_delay < self.delay:
+            ret, score = self.minimax(15)
             if best_score is None and ret is not None:
+                # print(ret, score)
                 best_ret = ret
                 best_score = score
             elif score >= best_score and ret is not None:
+                # print(ret, score)
                 best_ret = ret
                 best_score = score
             depth += 1
-
         print(time.time()- self.timer_beg)
         assert time.time()- self.timer_beg < self.delay
         print(best_ret, best_score)
+        # print(self.board.label_components())
+        # print(self.accessible_cells())
         return best_ret
 
     def minimax(self, depth=2, maximizing=True):
@@ -68,10 +54,12 @@ class TournoiAIPlayer():
         Returns:
             Action: le meilleur coup trouvé dans la profondeur explorée
         """
+        self.return_delay += self.return_single_delay
         if time.time() - self.timer_beg + self.return_delay >= self.delay:
              return (None, 0)
         if depth == 0:
             return (None, self.objective_function())
+            # return (None, DRAW)
         if maximizing:
             best_score = -INF
             player = self.player_id
@@ -88,7 +76,6 @@ class TournoiAIPlayer():
                 if winner == self.other_player_id:
                     score *= -1
             else:
-                self.return_delay += self.return_single_delay
                 score = self.minimax(depth-1, not maximizing)[1]
                 self.return_delay -= self.return_single_delay
             self.board.undo()
@@ -115,7 +102,11 @@ class TournoiAIPlayer():
                 other += (len(component)-count)/count
             else:
                 alone = False
-                score += self.movements_component(component)
+                sn, cn, on = self.movements_component(component)
+                score += sn
+                current += cn
+                other += on
+        print(score, current, other, "first")
         if alone:
             if current > other:
                 score += 1000
@@ -125,6 +116,7 @@ class TournoiAIPlayer():
             score -= 1000
         elif other == 0:
             score += 1000
+        print(self.board, score, current, other, "second")
         return score + current - other
 
     def movements_component(self, component):
@@ -147,9 +139,4 @@ class TournoiAIPlayer():
                         other += 1
             else:
                 score += 100
-        # print(self.board, current, other)
-        # if current == 0:
-        #     score -= 100
-        # elif other == 0:
-        #     score += 100
-        return score + current - other
+        return score, current, other
