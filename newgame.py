@@ -269,6 +269,8 @@ class CustomBoard(QVBoxLayout):
     def fill_selection(self, id_fill):
         """Remplit la sélection du plateau du pion choisie."""
         # print(id_fill)
+        ids = ("Blancs", "Noirs", "Vide", "Flèches")
+        id_fill = ids.index(id_fill.text())
         token = TOKENS[id_fill]  # empty
         selection = self.grid.selectedIndexes()
         for i in selection:
@@ -326,7 +328,7 @@ class CustomBoard(QVBoxLayout):
 
         tokens_names = ("Blancs", "Noirs", "Vide", "Flèches")
         self.top_bar_group = QButtonGroup()
-        self.top_bar_group.idPressed.connect(self.fill_selection)
+        self.top_bar_group.buttonClicked.connect(self.fill_selection)
         n = 0  # id des boutons
         for name in tokens_names:
             button = self.config_button(name)
