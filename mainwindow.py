@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Jeu des amazones")
 
-        self.resize(730, 800)
+        self.resize(730, 820)
         self.setMinimumWidth(730)
 
         # ajout de différentes composantes
@@ -173,7 +173,7 @@ class MainWindow(QMainWindow):
 
         if not self.board_outer_layout.isEmpty():  # si partie déjà en cours
             child = self.board_outer_layout.takeAt(0)
-            self.board_outer_layout.removeWidget(child.widget())
+            child.widget().deleteLater()
 
         self.amazons = Amazons()
         self.amazons.set_board(self.newG.board_size,
