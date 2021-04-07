@@ -20,8 +20,8 @@ class NewGame(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        self.delay = None
         self.resize(565, 796)
-        # self.setGeometry(400,400,565, 1000)
         self.setWindowTitle("Configuration de la partie")
         self.layout = QVBoxLayout()
 
@@ -72,28 +72,27 @@ class PlayersTypes(QVBoxLayout):
         super().__init__()
 
         self.types_layout = QHBoxLayout()
-        # self.types_layout.setContentsMargins(0,0,0,0)
-        self.setContentsMargins(0,0,0,10)
-        # self.setContentsMargins(11,11,11,22)
-        # self.setSpacing(20)
+        self.setContentsMargins(0,0,0,10)  # avoir une marge avec le slider
 
         self.player1 = PlayerType("blanc")
         self.player1.type_.activated.connect(self.enable_slider)
         self.types_layout.addLayout(self.player1)
+
         self.player2 = PlayerType("noir")
         self.player2.type_.activated.connect(self.enable_slider)
         self.types_layout.addLayout(self.player2)
         self.addLayout(self.types_layout)
 
-        self.delay_slider = DelaySlider()# TODO
+        self.delay_slider = DelaySlider()
         self.addLayout(self.delay_slider)
         self.insertSpacing(1, 8)
 
     def enable_slider(self):
+        """Permet d'activer et désactiver le slider, si jamais il n'est pas utile."""
         if self.player1.type_.currentIndex() or self.player2.type_.currentIndex():
             self.delay_slider.slider.setEnabled(True)
         else:
-            self.delay_slider.slider.setEnabled(False)
+            self.delay_slider.slider.setEnabled(False)  # si deux humains
 
 
 class PlayerType(QFormLayout):
@@ -108,7 +107,6 @@ class PlayerType(QFormLayout):
 
         self.setFormAlignment(Qt.AlignCenter)
         self.addRow(f"Joueur {couleur} :", self.type_())
-        # self.addRow("Délais IA :", self.slider())
 
     def type_(self):
         """Création de la combobox qui choisit le type d'un joueur."""
@@ -116,10 +114,10 @@ class PlayerType(QFormLayout):
         self.type_.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
         self.type_.addItems(["Humain", "Ordinateur"])
-        # self.type_.activated.connect(self.enable_slider)
         return self.type_
 
 class DelaySlider(QFormLayout):
+    """Représente le slider de difficulté, du délais de l'ia."""
 
     def __init__(self):
         super().__init__()
@@ -145,31 +143,6 @@ class DelaySlider(QFormLayout):
         return self.slider.value()
 
 
-    # def enable_slider(self, ia):
-    #     """Activer et désactiver le slider selon le choix du joueur.
-    #     Le slider n'est actif que si le joueur est une IA.
-    # 
-    #     Args:
-    #         ia (int): index élément sélectionné -> 1 si IA 0 si humain
-    #     """
-    #     if ia:
-    #         self.slider.setEnabled(True)  # slider est en deuxième pos
-    #     else:
-    #         self.slider.setEnabled(False)
-
-
-    # def slider(self):
-    #     """Création du slider de délais de l'IA. Plus élevé = plus dur."""
-    #     self.slider = QSlider(Qt.Horizontal)
-    #     self.slider.setEnabled(False)
-    #     self.slider.setTickPosition(QSlider.TicksBelow)
-    # 
-    #     self.slider.setRange(1, 10)
-    #     self.slider.setSingleStep(1)
-    #     self.slider.setTickInterval(1)
-    #     return self.slider
-
-
 class CustomBoard(QVBoxLayout):
     """Initialise la configuration du plateau de jeu."""
 
@@ -184,7 +157,10 @@ class CustomBoard(QVBoxLayout):
         self.addLayout(self.bottom_buttons())
 
     def to_attributes(self, file_=None):
-        # TODO
+        """Retranscis les infos du wizard de configuration en attributs.
+
+            Ces derniers seront accessibles pour commencer une partie.
+        """
         self.pos_arrows = []
         self.pos_black = []
         self.pos_white = []
@@ -196,13 +172,11 @@ class CustomBoard(QVBoxLayout):
                 self.pos_black.append(cell.coord_str)
             elif cell.id_ == 3:
                 self.pos_arrows.append(cell.coord_str)
-        print(self.pos_white, self.pos_black, self.pos_arrows)
+        # print(self.pos_white, self.pos_black, self.pos_arrows)
         # self.amazons.set_board(size pos_black, pos_white, pos_arrows)
 
     def from_amazon(self):
         """Met à jour la gui depuis l'instance d'Amazons."""
-
-        # self.grid.clearBoard()
 
         size = self.amazons.board.N
         self.spinner.setValue(size)
@@ -210,68 +184,47 @@ class CustomBoard(QVBoxLayout):
         for row in range(size):
             for col in range(size):
                 value = self.amazons.board.grid[Pos2D(row, col)]
-                # print(row, col, value)
-                self.grid[Pos2D(-(row-size+1), col)] = TOKENS[value]
-                # print(-(row-size+1), col, "<<")
-                
-
-        # # chars = [WHITE, BLACK, CHARS[3]]
-        # chars = self.board.tokens
-        # pions = self.amazons.board.queens
-        # pions.append(self.amazons.board.arrows[0])
-        # size
-        # for positions, char in zip(pions, chars):
-        #     for pos in positions:
-        #         # print(pos)
-        #         # print(pos.x, pos.y, colors[n])
-        #         fill = QTableWidgetItem(char)
-        #         fill.setTextAlignment(Qt.AlignCenter)
-        #         self.board.setItem(-(pos.y-size+1), pos.x, fill)
-        # pass
+                self.grid[Pos2D(-(row-size+1), col)] = TOKENS[value]  # les indices de lignes sont inversés
 
     def load_file(self):
+        """Charge un fichier et met à jour la gui du plateau."""
         filename = QFileDialog.getOpenFileName(self.parent().parent(),
                                                "Ouvrir un fichier",
                                                "",
                                                "Fichier texte (.txt)")[0]
-        # print(self.board.itemAt(0,0).text())
-        # self.to_amazon(filename[0])
         if filename == '':
             NoFileError(self.parent().parent())
             return
         try:
-            self.amazons = Amazons(filename)
-        # self.to_amazon(filename[0])
-            self.from_amazon()
+            self.amazons = Amazons(filename)  # lecture du fichier
+            self.from_amazon()  # mise à jour de la gui
         except (InvalidFormatError, InvalidPositionError):
             InvalidFormatErrorMsg(self.parent().parent())
-        # size, pos_black, pos_white, pos_arrows = read_file(filename[0])
-
-        # self.spinner.setValue(size)
-        # print(pos_black, pos_white, pos_arrows)
 
     def load_file_button(self):
+        """Retourne un bouton pour charger un fichier."""
         button = QPushButton("Charger un fichier")
         button.clicked.connect(self.load_file)
         return button
 
     def reset_button(self):
+        """Retourne un bouton pour réinitialiser le plateau."""
         button = QPushButton("Réinitialiser le plateau")
         button.clicked.connect(self.grid.clearBoard)
         return button
 
     def bottom_buttons(self):
+        """Retourne les bouttons en-dessous du plateau."""
         buttons = QHBoxLayout()
         buttons.addWidget(self.reset_button())
         buttons.addWidget(self.load_file_button())
         return buttons
 
     def fill_selection(self, id_fill):
-        """Remplit la sélection du plateau du pion choisie."""
-        # print(id_fill)
+        """Remplit la sélection du plateau par le pion choisi."""
         ids = ("Blancs", "Noirs", "Vide", "Flèches")
         id_fill = ids.index(id_fill.text())
-        token = TOKENS[id_fill]  # empty
+        token = TOKENS[id_fill]
         selection = self.grid.selectedIndexes()
         for i in selection:
             row = i.row()
@@ -290,6 +243,7 @@ class CustomBoard(QVBoxLayout):
         self.grid.size_changed(new_size)
 
     def size_spinner(self):
+        """Retourne le spinner pour changer la taille du plateau."""
         self.spinner = QSpinBox()
         self.spinner.setRange(1, 26)
         self.spinner.valueChanged.connect(self.change_board_size)
@@ -300,7 +254,6 @@ class CustomBoard(QVBoxLayout):
     def config_button(self, label):
         """Initialise un bouton de la barre d'outils supérieure du plateau."""
         button = QPushButton(label)
-        # button.pressed.connect(self.fill_selection)
 
         if label == "Flèches":
             button.setToolTip("Appuyez pour remplir la sélection de flèches")
@@ -322,7 +275,7 @@ class CustomBoard(QVBoxLayout):
         return button
 
     def top_buttons(self):
-        """Crée les bouttons au-dessus du plateau."""
+        """Crée les bouttons au-dessus du plateau et les renvoie."""
         self.top_bar = QHBoxLayout()
         self.top_bar.addWidget(self.size_spinner())
 
@@ -339,8 +292,7 @@ class CustomBoard(QVBoxLayout):
 
 
 class CustomGridUI(QTableWidget):
-    """Représente l'interface graphique d'un plateau de jeu.
-    """
+    """Représente l'interface graphique d'un plateau de jeu customisable."""
 
     def __init__(self):
         super().__init__(1, 1)
@@ -355,10 +307,10 @@ class CustomGridUI(QTableWidget):
         self.horizontalHeader().setMinimumSectionSize(10)
         self.verticalHeader().setMinimumSectionSize(10)
 
-        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)  # éviter d'écrire dans les cases
         self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        self.setItem(0, 0, Background(0))
+        self.setItem(0, 0, Background(0))  # pour avoir la première case colorée
         self.setCellWidget(0, 0, CustomGridCell(0,0, 1))
 
     def __setitem__(self, index, value):
@@ -371,10 +323,15 @@ class CustomGridUI(QTableWidget):
                 yield self.cellWidget(row, col)
 
     def clearBoard(self):
+        """Réinitialiser le plateau.
+
+            Un simple .clear effacerait aussi le fond des cases,
+        or ici ce ne sont que les pions qui sont enlevés."""
         for cell in self:
             cell.set_token(TOKENS[EMPTY])
 
     def size_changed(self, new_size):
+        """Lors d'un changement de taille, pour mettre à jour le plateau."""
         old_size = self.size
         self.size = new_size
         for row in range(old_size):
@@ -389,10 +346,10 @@ class CustomGridUI(QTableWidget):
             for row in range(old_size):
                 self.setItem(row, col, Background((col+row)%2))
                 self.setCellWidget(row, col, CustomGridCell(col, row, new_size))
-                
 
 
 class Background(QTableWidgetItem):
+    """Représente le fond d'une case du plateau customisable."""
 
     def __init__(self, light=1):
         super().__init__()
@@ -424,6 +381,7 @@ class CustomGridCell(QWidget):
         self.setLayout(layout)
 
     def set_token(self, path):
+        """Changer le pion qui est actuellement sur la case."""
         self.id_ = TOKENS.index(path)
         self.token.setPixmap(QPixmap(path))
 
