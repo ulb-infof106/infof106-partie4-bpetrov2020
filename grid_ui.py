@@ -49,7 +49,7 @@ class GridUI(QBoxLayout):
         return self.count()
 
     def set_disabled(self, state=True):
-        # print(len(self))
+        """Une grille désactivée n'accepte aucune entrée de l'utilisateur."""
         for row in self:
             for col in row:
                 col.setAttribute(Qt.WA_TransparentForMouseEvents, state)
