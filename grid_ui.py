@@ -125,26 +125,26 @@ class Cell(QPushButton):
         self.token.setPixmap(QPixmap(path))
         self.token.repaint()  # avoir un retour immédiat de l'action
 
-    def highlight(self, state=True):
-        """Pour mettre en valeur les cases où l'on peut jouer.
-
-        Args:
-            state(bool): True s'il faut mettre en valeur la case
-        """
-        if state:
-            if self.light != 0:
-                self.setStyleSheet(":flat {background-color:#d2cba8; border: 5px solid #ffff64}\
-                                    :checked{border:5px solid #827e68 }")
-            else:
-                self.setStyleSheet(":flat {background-color:#463c26; border: 5px solid #ffff00}\
-                                    :checked{border:5px solid #827e68 }")
-        else:
-            if self.light:
-                self.setStyleSheet(":flat {background-color:#d2cba8; border: none}\
-                                    :checked{border:5px solid #827e68 }")
-            else:
-                self.setStyleSheet(":flat {background-color:#463c26; border: none}\
-                                    :checked{border:5px solid #827e68 }")
+    # def highlight(self, state=True):
+    #     """Pour mettre en valeur les cases où l'on peut jouer.
+    # 
+    #     Args:
+    #         state(bool): True s'il faut mettre en valeur la case
+    #     """
+    #     if state:
+    #         if self.light != 0:
+    #             self.setStyleSheet(":flat {background-color:#d2cba8; border: 5px solid #ffff64}\
+    #                                 :checked{border:5px solid #827e68 }")
+    #         else:
+    #             self.setStyleSheet(":flat {background-color:#463c26; border: 5px solid #ffff00}\
+    #                                 :checked{border:5px solid #827e68 }")
+    #     else:
+    #         if self.light:
+    #             self.setStyleSheet(":flat {background-color:#d2cba8; border: none}\
+    #                                 :checked{border:5px solid #827e68 }")
+    #         else:
+    #             self.setStyleSheet(":flat {background-color:#463c26; border: none}\
+    #                                 :checked{border:5px solid #827e68 }")
 
 
 class Token(QLabel):
