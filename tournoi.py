@@ -1,3 +1,9 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 from players import Player
 from action import Action
 from const import *
@@ -5,8 +11,11 @@ import time
 import random
 
 class TournoiAIPlayer(Player):
-    """
-    Spécialisation de la classe Player représentant un joueur utilisant un minimax
+    """IA qui jouera au tournoi.
+
+    Améliorations:
+        L'amélioration principale est dans le fonction objective_function.
+        Dans cette dernière, 
     """
     def __init__(self, board, player_id):
         super().__init__(board, player_id)
@@ -18,15 +27,16 @@ class TournoiAIPlayer(Player):
         Returns:
             Action: le meilleur coup déterminé via minimax
         """
-        # print("ID", self.player_id, "white 0, black 1")
-        self.timer_beg = time.time()
+        self.timer_beg = time.time()  # début du timer
         self.delay = delay
-        self.return_single_delay = 0.0005*self.board.N
-        self.return_delay = 0
+
+        self.return_single_delay = 0.005*self.board.N
+        self.return_delay = 0  # délais pour resortir de minimax
+
         depth = 1
         best_score = None
         while time.time() - self.timer_beg + self.return_single_delay < self.delay:
-            ret, score = self.minimax(15)
+            ret, score = self.minimax(depth)
             if best_score is None and ret is not None:
                 # print(ret, score)
                 best_ret = ret
@@ -54,12 +64,10 @@ class TournoiAIPlayer(Player):
         Returns:
             Action: le meilleur coup trouvé dans la profondeur explorée
         """
-        self.return_delay += self.return_single_delay
         if time.time() - self.timer_beg + self.return_delay >= self.delay:
              return (None, 0)
         if depth == 0:
-            return (None, self.objective_function())
-            # return (None, DRAW)
+            return (None, self.objective_function(maximizing))
         if maximizing:
             best_score = -INF
             player = self.player_id
@@ -76,6 +84,7 @@ class TournoiAIPlayer(Player):
                 if winner == self.other_player_id:
                     score *= -1
             else:
+                self.return_delay += self.return_single_delay
                 score = self.minimax(depth-1, not maximizing)[1]
                 self.return_delay -= self.return_single_delay
             self.board.undo()
@@ -89,54 +98,55 @@ class TournoiAIPlayer(Player):
                 break
         return random.choice(best_actions), best_score
 
-    def objective_function(self):
+    def objective_function(self, maximizing):
+        """Retourne une valeur heurisitque à Minimax."""
         score, current, other = 0, 0, 0
         alone = True
         components, components_ids = self.board.label_components()
         for component in components:
             player, count = self.board.count_queens(component)
             if player == self.player_id and count != 0:
-                # print(player, count, self.board)
                 current += (len(component)-count)/count
             elif player == self.other_player_id and count != 0:
                 other += (len(component)-count)/count
             else:
-                alone = False
-                sn, cn, on = self.movements_component(component)
-                score += sn
-                current += cn
-                other += on
-        print(score, current, other, "first")
-        if alone:
-            if current > other:
-                score += 1000
-            elif current < other:
-                score -= 1000
-        if current == 0:
-            score -= 1000
-        elif other == 0:
-            score += 1000
-        print(self.board, score, current, other, "second")
-        return score + current - other
+                alone = False  # tous pions pas isolés
+                score += self.movements_component(component)
+
+        if alone:  # si tous les pions sont isolés
+            if current >= other and maximizing:
+                score += 100
+            elif current < other and not maximizing:
+                score -= 100
+        print(self.board,score +current-other, score, current, other)
+        return (score + current - other)/10
 
     def movements_component(self, component):
+        """Retourne les movements possibles pour chaque reine dans la composante.
+
+        Args:
+            component(list): composante présente
+        """
         score, current, other = 0, 0, 0
         current_queens = set(component) & set(self.board.queens[self.player_id])
         opponent_queens = set(component) & set(self.board.queens[self.other_player_id])
+
         for queen in current_queens:
             test = self.board._possible_moves_from(queen)
             if next(test, None) is not None:
                 for move in self.board._possible_moves_from(queen):
                     for arrow_move in self.board._possible_moves_from(move, ignore=queen):
                         current += 1
-            else:
+            else:  # si une reine du joueur est bloquée
                 score -= 100
+
         for queen in opponent_queens:
             test = self.board._possible_moves_from(queen)
             if next(test, None) is not None:
                 for move in self.board._possible_moves_from(queen):
                     for arrow_move in self.board._possible_moves_from(move, ignore=queen):
                         other += 1
-            else:
+            else:  # si une reine du joueur adverse est bloquée
                 score += 100
-        return score, current, other
+
+        return score + current - other

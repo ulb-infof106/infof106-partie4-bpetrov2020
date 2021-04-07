@@ -1,3 +1,9 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 from pos2d import Vec2D
 
 WHITE = '\u25CB'  # caractère du joueur blanc

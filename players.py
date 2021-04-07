@@ -1,3 +1,9 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 import random
 import time
 from abc import ABCMeta, abstractmethod
@@ -158,27 +164,53 @@ class AIPlayer(Player):
         return random.choice(best_actions), best_score
 
     def objective_function(self):
-        score = 0
+        score, current, other = 0, 0, 0
+        alone = True
         components, components_ids = self.board.label_components()
         for component in components:
             player, count = self.board.count_queens(component)
             if player == self.player_id and count != 0:
                 # print(player, count, self.board)
-                score += len(component)/count
+                current += (len(component)-count)/count
             elif player == self.other_player_id and count != 0:
-                score -= len(component)/count
+                other += (len(component)-count)/count
             else:
+                alone = False
                 score += self.movements_component(component)
-        return score
+        if alone:
+            if current > other:
+                score += 100
+            elif current < other:
+                score -= 100
+        if current == 0:
+            score -= 1000
+        elif other == 0:
+            score += 1000
+        return score + current - other
 
     def movements_component(self, component):
-        score = 0
+        score, current, other = 0, 0, 0
         current_queens = set(component) & set(self.board.queens[self.player_id])
         opponent_queens = set(component) & set(self.board.queens[self.other_player_id])
         for queen in current_queens:
-            for _ in self.board._possible_moves_from(queen):
-                score += 1
+            test = self.board._possible_moves_from(queen)
+            if next(test, None) is not None:
+                for move in self.board._possible_moves_from(queen):
+                    for arrow_move in self.board._possible_moves_from(move, ignore=queen):
+                        current += 1
+            else:
+                score -= 100
         for queen in opponent_queens:
-            for _ in self.board._possible_moves_from(queen):
-                score -= 2
-        return score
+            test = self.board._possible_moves_from(queen)
+            if next(test, None) is not None:
+                for move in self.board._possible_moves_from(queen):
+                    for arrow_move in self.board._possible_moves_from(move, ignore=queen):
+                        other += 1
+            else:
+                score += 100
+        # print(self.board, current, other)
+        # if current == 0:
+        #     score -= 100
+        # elif other == 0:
+        #     score += 100
+        return score + current - other

@@ -1,3 +1,9 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 from PyQt5.QtWidgets import QMessageBox
 
 class WinnerMsg(QMessageBox):

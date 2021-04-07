@@ -1,3 +1,9 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 from exceptions import *
 
 class Pos2D:

@@ -1,3 +1,9 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 from exceptions import InvalidActionError
 from action import Action, Pos2D
 from const import *

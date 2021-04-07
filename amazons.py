@@ -1,7 +1,14 @@
+"""
+Prénom: Boris
+Nom: Petrov
+Matricule: 000515795
+"""
+
 from board import Board
 from exceptions import InvalidFormatError
 from players import *
 from const import *
+from tournoi import TournoiAIPlayer
 
 def extract_positions(line):
     """
