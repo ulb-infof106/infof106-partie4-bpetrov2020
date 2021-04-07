@@ -159,14 +159,12 @@ class MainWindow(QMainWindow):
 
     def config_new_game(self):
         """Configuration et commencement d'une partie."""
+        self.newG.delay = None
         self.newG.exec_()
-        try:
-            self.newG.delay  # test si fenêtre a été fermée -> pas de config
+        if self.newG.delay is not None:  # test si fenêtre a été fermée -> pas de config
             self.status_bar.show()
             self.tool_bar.show()
             self.begin_game()
-        except AttributeError:
-            return
 
     def begin_game(self):
         """Démarre une partie."""
