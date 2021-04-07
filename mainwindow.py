@@ -4,6 +4,7 @@ from PyQt5.QtGui import *
 
 import sys
 import time
+import pygame
 
 from amazons import Amazons
 from pos2d import Pos2D
@@ -21,6 +22,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()  # initialiser QMainWindow
 
+        pygame.init()
         self.newG = NewGame(self)
         self.layout = QVBoxLayout()
         # self.layout.setContentsMargins(10,10,10,5)
@@ -41,6 +43,9 @@ class MainWindow(QMainWindow):
         self.widget.setLayout(self.layout)
         self.setCentralWidget(self.widget)
         self.show()
+
+        pygame.mixer.music.load('tmusic.ogg')
+        pygame.mixer.music.play(-1)
 
     def add_menu_bar(self):
         """Ajoute la barre de menu."""
