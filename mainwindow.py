@@ -18,22 +18,20 @@ from MessageBoxes import *
 
 
 class MainWindow(QMainWindow):
+    """Fenêtre principale de l'application."""
 
     def __init__(self):
         super().__init__()  # initialiser QMainWindow
 
-        pygame.init()
-        self.newG = NewGame(self)
+        self.newG = NewGame(self)  # wizard pour une nouvelle partie
         self.layout = QVBoxLayout()
-        # self.layout.setContentsMargins(10,10,10,5)
-        # self.layout.setSpacing(5)
-        # self.path = ''
 
         self.setWindowTitle("Jeu des amazones")
 
         self.resize(730, 800)
         self.setMinimumWidth(730)
 
+        # ajout de différentes composantes
         self.add_menu_bar()
         self.add_tool_bar()
         self.add_board_placeholder()
@@ -44,6 +42,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.widget)
         self.show()
 
+        pygame.init()  # ajouter un peu de musique
         pygame.mixer.music.load('tmusic.ogg')
         pygame.mixer.music.play(-1)
 
@@ -81,7 +80,7 @@ class MainWindow(QMainWindow):
         self.tool_bar.addAction(self.pause_game)
 
         self.layout.addWidget(self.tool_bar)
-        self.tool_bar.hide()
+        self.tool_bar.hide()  # éviter de l'avoir au début
 
     def add_board_placeholder(self):
         """Placeholder pour le plateau qui va être ajouté par la suite."""
@@ -103,14 +102,6 @@ class MainWindow(QMainWindow):
         greet_text.setStyleSheet("QLabel { font-size: 20px; font: bold}")
         greet_text.setText("Bienvenue dans le jeu des amazones !")
         self.greet_layout.addWidget(greet_text)
-
-        # greet_explain = QLabel()
-        # greet_explain.setAlignment(Qt.AlignCenter)
-        # greet_explain.setStyleSheet("QLabel { font-size: 16px}")
-        # greet_explain.setTextFormat(Qt.MarkdownText)
-        # # greet_text.setText("**Bienvenue dans le jeu des amazones !**")
-        # greet_explain.setText("Pour commencer une partie : **Jeu** > **Nouvelle partie...**")
-        # self.greet_layout.addWidget(greet_explain)
 
         greet_button_layout = QHBoxLayout()
         greet_button = QPushButton("Nouvelle partie")
@@ -149,7 +140,7 @@ class MainWindow(QMainWindow):
 
         self.status_bar.setLayout(status_bar_layout)
         self.layout.addWidget(self.status_bar)
-        self.status_bar.hide()
+        self.status_bar.hide()  # éviter de l'avoir au début
 
     def pause_game_(self):
         """Permet de mettre le jeu en pause.
@@ -157,29 +148,28 @@ class MainWindow(QMainWindow):
             Lorsque le jeu est en pause, personne ne peut jouer.
         Ni IAs, ni humains.
         """
-        if self.board_widget.paused is False:
-            self.pause_game.setIcon(QIcon(QPixmap("start.svg")))
-            self.board_widget.paused = True
-        else:
-            self.pause_game.setIcon(QIcon(QPixmap("pause.svg")))
-            self.board_widget.paused = False
-            self.board_widget.timer.start()
+        if isinstance(self.board_widget, BoardUI):
+            if self.board_widget.paused is False:
+                self.pause_game.setIcon(QIcon(QPixmap("start.svg")))
+                self.board_widget.paused = True
+            else:
+                self.pause_game.setIcon(QIcon(QPixmap("pause.svg")))
+                self.board_widget.paused = False
+                self.board_widget.timer.start()
 
     def config_new_game(self):
         """Configuration et commencement d'une partie."""
-        # self.newG = NewGame(self)
         self.newG.exec_()
         try:
             self.newG.delay  # test si fenêtre a été fermée -> pas de config
             self.status_bar.show()
+            self.tool_bar.show()
             self.begin_game()
-            # print("game begins")
         except AttributeError:
-            # print("game doesnt begin")
-            pass
+            return
 
-    def begin_game(self, path=None):
-        """Démarre une partie de jeu."""
+    def begin_game(self):
+        """Démarre une partie."""
 
         if not self.board_outer_layout.isEmpty():  # si partie déjà en cours
             child = self.board_outer_layout.takeAt(0)
@@ -196,27 +186,13 @@ class MainWindow(QMainWindow):
         self.board_widget = BoardUI(self.amazons)
         self.board_outer_layout.addWidget(self.board_widget)
 
-        if self.newG.player1 or self.newG.player2:
+        if self.newG.player1 or self.newG.player2:  # si au moin un joueur est IA
             self.delay_slid.slider.setEnabled(True)
         self.delay_slid.slider.setValue(self.newG.delay)
 
         self.save_game.setEnabled(True)
-        self.tool_bar.show()
 
-        self.board_widget.timer.start()
-
-    # def stop_game(self):
-    #     out = StopGame(self).exec_()
-    #     print(out)
-    #     if out == 16384:  # valeur retournée pour un oui
-    #         print("yes")
-    #         self.board_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
-    #         self.begin_button.setText("Commencer la partie")
-    #         self.begin_button.clicked.disconnect()
-    #         self.begin_button.clicked.connect(self.begin_game)
-    #     else:
-    #         pass
-    #         print("no")
+        self.board_widget.timer.start()  # commencer la partie
 
     def save_game_(self):
         """Permet de sauvegarder la configuration de la partie.
@@ -230,25 +206,21 @@ class MainWindow(QMainWindow):
                                                     "",
                                                     "Fichier texte(.txt)")[0]
         if save_filename != "":  # si annulé
-            if save_filename[-4:] != ".txt":
+            if save_filename[-4:] != ".txt":  # si déjà extension
                 save_filename += ".txt"
+
             save_file = open(f"{save_filename}", "w", encoding="utf-8")
-            save_file.write(f'{self.amazons.board.N}\n')
+            save_file.write(f'{self.amazons.board.N}\n')  # taille
             tokens = ([], [], [], [])
             for row in self.board_widget.grid_ui:
                 for col in row:
                     if col.id_ != 2:
                         tokens[col.id_].append(col.coord_str)
-            save_file.write(f"{','.join(tokens[0])}\n")
-            save_file.write(f"{','.join(tokens[1])}\n")
-            save_file.write(f"{','.join(tokens[3])}")
-            save_file.close()
 
-    def replay_game(self):
-        # replay_file = 
-        # self.board
-        # TODO
-        pass
+            save_file.write(f"{','.join(tokens[0])}\n")  # positions blancs
+            save_file.write(f"{','.join(tokens[1])}\n")  # positions noirs
+            save_file.write(f"{','.join(tokens[3])}")    # positions flèches
+            save_file.close()
 
     def change_delay(self, new_val):
         """Changer le délais de l'ia"""
@@ -257,16 +229,12 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, QResizeEvent):
         """Pour garder un plateau carré en redimentionnant la fenêtre."""
         geo = self.board_outer_layout.geometry()
-        # diff = abs(geo.width()-geo.height())
-        # print(self.geometry().width(), self.geometry().height())
         if geo.width() < geo.height():
             self.board_widget.setMaximumHeight(geo.width())
             self.board_widget.setMaximumWidth(geo.width())
-            # self.board_outer_layout.setContentsMargins(0, int(diff/2), 0, int(diff/2))
         elif geo.width() > geo.height():
             self.board_widget.setMaximumWidth(geo.height())
             self.board_widget.setMaximumHeight(geo.height())
-            # self.board_outer_layout.setContentsMargins(int(diff/2), 0, int(diff/2), 0)
 
     def closeEvent(self, QCloseEvent=None):
         """Implémentation d'un 'sauvegarder avant de quitter'."""
@@ -282,12 +250,18 @@ class MainWindow(QMainWindow):
 
 
 class BoardUI(QWidget):
+    """Représente le widget d'un plateau de jeu.
+
+    Args:
+        game(Amazon): la partie en background
+        parent(QWidget): le parent
+    """
 
     def __init__(self, game, parent=None):
         super().__init__(parent)
 
         self.game = game
-        self.grid_ui = GridUI(self.game.board)
+        self.grid_ui = GridUI(self.game.board)  # grille du jeu
         self.grid_ui.set_disabled(True)
         self.grid_ui.cells.buttonClicked.connect(self.add_action)
         self.setLayout(self.grid_ui)
@@ -300,7 +274,7 @@ class BoardUI(QWidget):
         self.delay = 2
         self.paused = False  # détermine si la partie est en pause
 
-        self.timer = QTimer()
+        self.timer = QTimer()  # timer avant le prochain coup, pour pouvoir update le plateau
         self.timer.timeout.connect(self.next_turn)
         self.timer.setSingleShot(True)
         self.timer.setInterval(100)
@@ -317,13 +291,14 @@ class BoardUI(QWidget):
             self.current_player = self.game.players[self.current_player_idx]
             if isinstance(self.current_player, HumanPlayer):
                 self.parent().parent().status_msg.setText(self.status_bar_msgs[self.current_player_idx].format("humain"))
+                self.parent().parent().status_msg.repaint()  # avoir un retour immédiat
                 self.human_turn_begin()
             else:
                 self.parent().parent().status_msg.setText(self.status_bar_msgs[self.current_player_idx].format("ordinateur"))
+                self.parent().parent().status_msg.repaint()  # avoir un retour immédiat
                 action = self.current_player.play(delay=self.delay)
                 self.update_from_action(action)
                 self.timer.start()
-                # self.next_turn()
 
     def human_turn_begin(self):
         """Le tour du joueur humain commence."""
@@ -333,12 +308,12 @@ class BoardUI(QWidget):
     def human_turn_end(self):
         """Le tour du joueur humain se finit peut-être."""
         try:
-            # action = self.current_player.play(f'{self.action[0].str_}>{self.action[1].str_}>{self.action[2].str_}')
             action = self.current_player.play(''.join(self.action))
             self.update_from_action(action)
             self.set_state(False)
             self.next_turn()
-        except InvalidActionError:
+        except InvalidActionError:  # si coup pas valide
+            InvalidActionErrorMsg(self)
             self.action = []
 
     def add_action(self, action):
@@ -357,11 +332,13 @@ class BoardUI(QWidget):
             self.human_turn_end()
 
     def declare_winner(self):
-        # print(self.game.board.history)
+        """Déclare le gagant."""
         self.parent().parent().delay_slid.slider.setEnabled(False)
+
         winner_msg, winner_str = self.game.show_winner()
+
         self.parent().parent().status_msg.setText(f"La partie est finie. Joueur {winner_str} a gagné !")
-        WinnerMsg(winner_msg, self.parent())
+        WinnerMsg(winner_msg, self.parent().parent())
 
     def set_state(self, state=True):
         """Active et désactive le plateau de jeu.
